@@ -1,0 +1,459 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin } from 'lucide-react';
+
+import ModernCard from '../components/Templates/ModernCard';
+import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
+import MinimalistCard from '../components/Templates/MinimalistCard';
+
+import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
+
+import RedGeometricCard from '../components/Templates/RedGeometricCard';
+import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
+
+const CreateCard = () => {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState(null);
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [coverUrl, setCoverUrl] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
+
+    const [formData, setFormData] = useState({
+        title: 'My Business Card',
+        name: '',
+        profession: '',
+        company: '',
+        phone: '',
+        email: '',
+        website: '',
+        location: '',
+        google_map_link: '',
+        cover_url: '',
+        theme_color: '#6366f1',
+        template_id: 'modern',
+        social_links: {
+            instagram: '',
+            linkedin: '',
+            facebook: '',
+            twitter: '',
+            youtube: ''
+        }
+    });
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSocialChange = (e) => {
+        setFormData({
+            ...formData,
+            social_links: { ...formData.social_links, [e.target.name]: e.target.value }
+        });
+    };
+
+    const handleImageSelect = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        setAvatarFile(file);
+        setAvatarUrl(URL.createObjectURL(file)); // Preview
+    };
+
+    const handleCoverSelect = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        setCoverFile(file);
+        setCoverUrl(URL.createObjectURL(file)); // Preview
+    };
+
+    const uploadAvatar = async (userId) => {
+        if (!avatarFile) return null;
+
+        try {
+            setUploading(true);
+            const fileExt = avatarFile.name.split('.').pop();
+            const fileName = `${userId}/${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Note: 'avatars' bucket must exist and be public
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, avatarFile);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Error uploading image. Make sure "avatars" bucket exists in Supabase.');
+            return null;
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const uploadFile = async (file, userId, bucket = 'avatars') => {
+        if (!file) return null;
+
+        try {
+            setUploading(true);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}/${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            // alert(`Error uploading file to ${bucket}.`); // Suppress alert for smooth UX
+            return null;
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    // Helper to format social links
+    const formatSocialUrl = (platform, username) => {
+        if (!username) return '';
+        if (username.startsWith('http')) return username; // Already a URL
+
+        username = username.replace('@', ''); // Remove @ if present
+
+        switch (platform) {
+            case 'instagram': return `https://instagram.com/${username}`;
+            case 'linkedin': return `https://linkedin.com/in/${username}`;
+            case 'facebook': return `https://facebook.com/${username}`;
+            case 'twitter': return `https://twitter.com/${username}`;
+            case 'youtube': return `https://youtube.com/@${username}`;
+            default: return username;
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validation for Google Map Link
+        if (formData.google_map_link && !formData.google_map_link.startsWith('http')) {
+            alert('Please enter a valid Google Maps link (e.g., https://maps.app.goo.gl/...)');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            // Upload Images
+            let finalAvatarUrl = null;
+            if (avatarFile) {
+                finalAvatarUrl = await uploadFile(avatarFile, user.id, 'avatars');
+            }
+
+            let finalCoverUrl = null;
+            if (coverFile) {
+                // Reusing 'avatars' bucket if 'covers' doesn't exist, or assuming 'avatars' is general purpose public bucket
+                finalCoverUrl = await uploadFile(coverFile, user.id, 'avatars');
+            }
+
+            // Process Social Links
+            const processedSocials = {};
+            Object.entries(formData.social_links).forEach(([key, value]) => {
+                const url = formatSocialUrl(key, value);
+                if (url) processedSocials[key] = url;
+            });
+
+            const { error } = await supabase.from('cards').insert({
+                user_id: user.id,
+                ...formData,
+                avatar_url: finalAvatarUrl,
+                cover_url: finalCoverUrl,
+                social_links: processedSocials
+            });
+
+            if (error) throw error;
+            navigate('/dashboard');
+
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Prepare preview data
+    const previewCard = {
+        ...formData,
+        avatar_url: avatarUrl,
+        cover_url: coverUrl,
+        // Since we are typing usernames but templates expect URLs, let's format them for preview on the fly
+        social_links: Object.keys(formData.social_links).reduce((acc, key) => {
+            const username = formData.social_links[key];
+            if (username) acc[key] = formatSocialUrl(key, username);
+            return acc;
+        }, {})
+    };
+
+    const renderPreview = () => {
+        const props = {
+            card: previewCard,
+            isSaved: false,
+            isLiked: false,
+            userRating: 0,
+            ratingStats: { average: 0, count: 0 },
+            showRating: false,
+            handleLike: (e) => e.preventDefault(),
+            handleSave: (e) => e.preventDefault(),
+            handleRate: (val) => console.log("Rate:", val)
+        };
+
+        switch (formData.template_id) {
+            case 'conference-gradient': return <ConferenceGradientCard {...props} />;
+            case 'minimalist': return <MinimalistCard {...props} />;
+            case 'glassmorphism': return <GlassmorphismCard {...props} />;
+            case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
+            case 'red-geometric': return <RedGeometricCard {...props} />;
+            case 'modern': default: return <ModernCard {...props} />;
+        }
+    };
+
+    return (
+        <div className="container max-w-7xl py-8 md:py-12">
+            <div className="flex flex-col lg:flex-row gap-8">
+
+                {/* Left Side: Form */}
+                <div className="w-full lg:w-1/2 order-2 lg:order-1">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+                        <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-6">
+                            <div className="p-3 bg-indigo-50 rounded-lg text-indigo-600">
+                                <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-800">Create Digital Card</h1>
+                                <p className="text-slate-500">Fill in your details to generate your card</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+
+                            {/* Template Selection moved to top for better UX */}
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-slate-800">Choose Template</h3>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {[
+                                        { id: 'modern', name: 'Modern', color: '#6366f1' },
+                                        { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
+                                        { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
+                                        { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
+                                        { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
+                                        { id: 'red-geometric', name: 'Geometric', color: '#EF4444' }
+                                    ].map(template => (
+                                        <button
+                                            key={template.id}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, template_id: template.id })}
+                                            className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${formData.template_id === template.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-indigo-200'}`}
+                                        >
+                                            <div
+                                                className={`w-full h-12 rounded-lg shadow-sm ${template.border ? 'border border-gray-200' : ''}`}
+                                                style={{ background: template.color }}
+                                            ></div>
+                                            <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-indigo-700' : 'text-slate-500'}`}>
+                                                {template.name}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Profile Picture Upload */}
+                            <div className="flex justify-center py-6 border-y border-slate-50">
+                                <div className="relative group">
+                                    <div className="w-32 h-32 rounded-full border-4 border-slate-100 overflow-hidden bg-slate-50 flex items-center justify-center">
+                                        {avatarUrl ? (
+                                            <img src={avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Camera className="w-10 h-10 text-slate-300" />
+                                        )}
+                                    </div>
+                                    <label className="absolute bottom-0 right-0 bg-indigo-600 p-2.5 rounded-full text-white cursor-pointer hover:bg-indigo-700 shadow-md transform hover:scale-105 transition-transform">
+                                        <Upload className="w-4 h-4" />
+                                        <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Cover Image Upload (Only for Hero Template) */}
+                            {formData.template_id === 'hero-cover-profile' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Cover Image</label>
+                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden">
+                                        {coverUrl ? (
+                                            <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                        ) : (
+                                            <div className="text-slate-400">
+                                                <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                                <p className="text-xs">Click to upload cover image</p>
+                                            </div>
+                                        )}
+                                        <input type="file" accept="image/*" onChange={handleCoverSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Full Name</label>
+                                    <input required type="text" name="name" value={formData.name} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Alex Smith" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Profession / Title</label>
+                                    <input required type="text" name="profession" value={formData.profession} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Product Designer" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Company</label>
+                                    <input type="text" name="company" value={formData.company} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Acme Corp" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Location</label>
+                                    <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="City, Country" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 mt-4">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-indigo-500" />
+                                    Google Map Location
+                                </label>
+                                <input
+                                    type="text"
+                                    name="google_map_link"
+                                    value={formData.google_map_link}
+                                    onChange={handleChange}
+                                    className="input-field w-full p-2 border rounded-lg"
+                                    placeholder="Paste your Google Maps link (https://maps.google.com...)"
+                                />
+                                <p className="text-xs text-slate-400">Link must start with https://maps.google.com or https://www.google.com/maps</p>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-50">
+                                <h3 className="font-bold text-slate-800">Contact Details</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700">Phone Number</label>
+                                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="+1 234 567 890" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-slate-700">Email Address</label>
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="alex@example.com" />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-sm font-medium text-slate-700">Website</label>
+                                        <input type="url" name="website" value={formData.website} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="https://mysite.com" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-50">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <LinkIcon className="w-4 h-4 text-indigo-500" />
+                                    <h3 className="font-bold text-slate-800">Social Media Usernames</h3>
+                                </div>
+                                <p className="text-xs text-slate-500 -mt-3 mb-4">Just enter your username, we'll handle the links</p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube'].map(platform => (
+                                        <div key={platform} className="relative">
+                                            <span className="absolute left-3 top-2.5 text-slate-400 text-sm capitalize">{platform === 'linkedin' ? 'in/' : '@'}</span>
+                                            <input
+                                                name={platform}
+                                                value={formData.social_links[platform]}
+                                                onChange={handleSocialChange}
+                                                className="pl-10 p-2 border rounded-lg w-full"
+                                                placeholder={platform.charAt(0).toUpperCase() + platform.slice(1)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-slate-50">
+                                <h3 className="font-bold text-slate-800">Theme Color</h3>
+                                <div className="flex gap-3">
+                                    {['#6366f1', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#1e293b'].map(color => (
+                                        <button
+                                            key={color}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, theme_color: color })}
+                                            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${formData.theme_color === color ? 'border-slate-800 scale-110' : 'border-transparent'}`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                    {/* Custom Color Picker */}
+                                    <div className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-slate-200 hover:border-slate-400 transition-colors cursor-pointer group">
+                                        <input
+                                            type="color"
+                                            value={formData.theme_color}
+                                            onChange={(e) => setFormData({ ...formData, theme_color: e.target.value })}
+                                            className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] cursor-pointer p-0 border-0"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover:bg-black/10">
+                                            <span className="text-[10px font-bold text-slate-800">+</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100 p-4 -mx-6 -mb-6 md:-mx-8 md:-mb-8 rounded-b-2xl z-10">
+                                <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-medium hover:bg-slate-50">Cancel</button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg shadow-indigo-200"
+                                >
+                                    {loading || uploading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save className="w-5 h-5" /> Create Card</>}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {/* Right Side: Live Preview (Sticky) */}
+                <div className="w-full lg:w-1/2 order-1 lg:order-2">
+                    <div className="lg:sticky lg:top-24">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                Live Preview
+                            </h2>
+                            <div className="text-xs text-slate-400">Updates automatically</div>
+                        </div>
+
+                        <div className="bg-slate-200/50 rounded-3xl p-6 md:p-10 flex items-center justify-center min-h-[600px] border border-slate-200 shadow-inner">
+                            <div className="transform scale-[0.85] md:scale-100 transition-transform duration-300 origin-center">
+                                {renderPreview()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
+};
+
+export default CreateCard;
