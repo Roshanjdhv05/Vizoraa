@@ -8,6 +8,9 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
     const defaultCover = "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop";
     const coverImage = card.cover_url || defaultCover;
 
+    // Theme Color (Default to Orange if not set)
+    const themeColor = card.theme_color || '#f97316';
+
     const SocialIcon = ({ platform }) => {
         switch (platform?.toLowerCase()) {
             case 'instagram': return <Instagram className="w-5 h-5" />;
@@ -50,7 +53,10 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                             className="w-full h-full rounded-full object-cover bg-slate-100"
                         />
                     ) : (
-                        <div className="w-full h-full rounded-full bg-orange-100 flex items-center justify-center text-3xl font-bold text-orange-500">
+                        <div
+                            className="w-full h-full rounded-full flex items-center justify-center text-3xl font-bold"
+                            style={{ backgroundColor: `${themeColor}20`, color: themeColor }}
+                        >
                             {card.name ? card.name[0] : 'U'}
                         </div>
                     )}
@@ -70,9 +76,9 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
             {/* Rating Section (Existing Feature Support) */}
             {showRating && (
                 <div className="flex flex-col items-center justify-center mb-6">
-                    <div className="flex items-center gap-1 mb-2 bg-orange-50 px-3 py-1 rounded-full">
+                    <div className="flex items-center gap-1 mb-2 px-3 py-1 rounded-full" style={{ backgroundColor: `${themeColor}15` }}>
                         <span className="font-bold text-slate-800">{ratingStats?.average || '0.0'}</span>
-                        <span className="text-xs text-orange-300">({ratingStats?.count || 0})</span>
+                        <span className="text-xs opacity-70" style={{ color: themeColor }}>({ratingStats?.count || 0})</span>
                     </div>
                     <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -82,7 +88,8 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                                 onMouseEnter={() => setHoverRating(star)}
                                 onMouseLeave={() => setHoverRating(0)}
                                 disabled={userRating > 0}
-                                className={`transition-transform hover:scale-110 focus:outline-none ${star <= (hoverRating || userRating) ? 'text-orange-400' : 'text-orange-200 hover:text-orange-300'}`}
+                                className={`transition-transform hover:scale-110 focus:outline-none`}
+                                style={{ color: star <= (hoverRating || userRating) ? themeColor : '#fed7aa' }}
                             >
                                 <Star
                                     className="w-5 h-5"
@@ -99,7 +106,8 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                 {card.email && (
                     <a
                         href={`mailto:${card.email}`}
-                        className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-200 hover:scale-110 active:scale-95 transition-all"
+                        className="w-12 h-12 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                        style={{ backgroundColor: themeColor, shadowColor: `${themeColor}40` }}
                     >
                         <Mail className="w-6 h-6" />
                     </a>
@@ -123,7 +131,10 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                         <a
                             href={card.website}
                             target="_blank"
-                            className="text-slate-400 hover:text-orange-500 transition-colors"
+                            className="text-slate-400 transition-colors"
+                            style={{ ':hover': { color: themeColor } }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
                             title="Website"
                         >
                             <SocialIcon platform="website" />
@@ -136,7 +147,9 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                             key={platform}
                             href={url}
                             target="_blank"
-                            className="text-slate-400 hover:text-orange-500 transition-colors"
+                            className="text-slate-400 transition-colors"
+                            onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
+                            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
                         >
                             <SocialIcon platform={platform} />
                         </a>
@@ -149,7 +162,9 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                     <a
                         href={card.google_map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location || '')}`}
                         target="_blank"
-                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-orange-500"
+                        className="flex items-center gap-1 text-xs text-slate-400"
+                        onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
+                        onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
                     >
                         <MapPin className="w-3 h-3" />
                         {card.location || "View Location"}
@@ -161,7 +176,10 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
             <div className="flex-1"></div>
 
             {/* 6. Footer Section */}
-            <div className="bg-orange-500 py-4 text-center mt-auto">
+            <div
+                className="py-4 text-center mt-auto transition-colors duration-300"
+                style={{ backgroundColor: themeColor }}
+            >
                 <p className="text-white/90 text-sm font-medium">Tap icons to connect</p>
                 <div className="flex justify-center gap-4 mt-3">
                     <button onClick={handleLike} className={`text-white/80 hover:text-white flex items-center gap-1 text-xs ${isLiked ? 'font-bold text-white' : ''}`}>

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin, Star } from 'lucide-react';
+import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin, Star, LayoutTemplate } from 'lucide-react';
 
 import ModernCard from '../components/Templates/ModernCard';
 import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
@@ -20,6 +20,21 @@ const CreateCard = () => {
     const [avatarFile, setAvatarFile] = useState(null);
     const [coverUrl, setCoverUrl] = useState(null);
     const [coverFile, setCoverFile] = useState(null);
+    const [unlockedTemplates, setUnlockedTemplates] = useState([]);
+
+    useEffect(() => {
+        checkUserTemplates();
+    }, []);
+
+    const checkUserTemplates = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data: profile } = await supabase.from('profiles').select('unlocked_templates').eq('id', user.id).single();
+            if (profile && profile.unlocked_templates) {
+                setUnlockedTemplates(profile.unlocked_templates);
+            }
+        }
+    };
 
     const [formData, setFormData] = useState({
         title: 'My Business Card',
@@ -259,6 +274,15 @@ const CreateCard = () => {
 
         setLoading(true);
 
+        // Check for Unlocked Template
+        const isTemplateUnlocked = unlockedTemplates?.includes(formData.template_id);
+
+        if (isTemplateUnlocked) {
+            // Bypass Payment for Unlocked Template
+            await createCard(true); // Treat as premium
+            return;
+        }
+
         // Check if Premium Template
         if (formData.template_id === 'hero-cover-profile') {
             // Trigger Payment Flow
@@ -376,7 +400,14 @@ const CreateCard = () => {
                                                 onClick={() => setFormData({ ...formData, template_id: template.id })}
                                                 className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 overflow-hidden ${formData.template_id === template.id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-amber-200'}`}
                                             >
-                                                <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">PRO</div>
+                                                {unlockedTemplates?.includes(template.id) ? (
+                                                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10 flex items-center gap-1">
+                                                        <LayoutTemplate className="w-2 h-2" /> UNLOCKED
+                                                    </div>
+                                                ) : (
+                                                    <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">PRO</div>
+                                                )}
+
                                                 <div
                                                     className={`w-full h-12 rounded-lg shadow-sm relative overflow-hidden`}
                                                     style={{ background: template.color }}
@@ -386,9 +417,16 @@ const CreateCard = () => {
                                                 <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-amber-700' : 'text-slate-500'}`}>
                                                     {template.name}
                                                 </span>
-                                                <span className="text-[10px] font-bold text-slate-900 bg-white px-1.5 rounded border border-slate-200">
-                                                    ₹99
-                                                </span>
+
+                                                {unlockedTemplates?.includes(template.id) ? (
+                                                    <span className="text-[10px] font-bold text-green-700 bg-green-50 px-1.5 rounded border border-green-200">
+                                                        Free
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-900 bg-white px-1.5 rounded border border-slate-200">
+                                                        ₹99
+                                                    </span>
+                                                )}
                                             </button>
                                         ))}
                                     </div>
@@ -556,13 +594,14 @@ const CreateCard = () => {
                                         <Loader2 className="animate-spin w-5 h-5" />
                                     ) : (
                                         <>
-                                            {formData.template_id === 'hero-cover-profile' ? (
+                                            {formData.template_id === 'hero-cover-profile' && !unlockedTemplates?.includes(formData.template_id) ? (
                                                 <>
                                                     <Star className="w-5 h-5 fill-current" /> Pay & Create Card
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Save className="w-5 h-5" /> Create Card
+                                                    <Save className="w-5 h-5" />
+                                                    {unlockedTemplates?.includes(formData.template_id) ? 'Create Information Card (Free)' : 'Create Card'}
                                                 </>
                                             )}
                                         </>
