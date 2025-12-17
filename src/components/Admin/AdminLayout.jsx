@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, CreditCard, MonitorPlay, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, MonitorPlay, LogOut, Menu, X, Crown } from 'lucide-react';
 import { useState } from 'react';
 
 const AdminLayout = () => {
@@ -43,6 +43,7 @@ const AdminLayout = () => {
 
                 <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
                     <NavItem to="/admin/dashboard" icon={LayoutDashboard} label="Dashboard" />
+                    <NavItem to="/admin/premium" icon={Crown} label="Premium Plans" />
                     <NavItem to="/admin/users" icon={Users} label="Users & Verification" />
                     <NavItem to="/admin/cards" icon={CreditCard} label="Cards & Filters" />
                     <NavItem to="/admin/ads" icon={MonitorPlay} label="Ads Management" />

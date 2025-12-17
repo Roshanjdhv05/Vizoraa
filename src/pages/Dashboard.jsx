@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import {
     Plus, Layout, Heart, Eye, Star, CreditCard,
-    Edit2, Trash2, MoreVertical, Globe, Lock, Share2, QrCode
+    Edit2, Trash2, MoreVertical, Globe, Lock, Share2, QrCode, Crown
 } from 'lucide-react';
 import QRCodeModal from '../components/UI/QRCodeModal';
 
@@ -14,6 +14,7 @@ const Dashboard = () => {
     const [stats, setStats] = useState({ total: 0, likes: 0, views: 0, avgRating: 0 });
     const [showDeleteModal, setShowDeleteModal] = useState(null); // cardId or null
     const [showQRModal, setShowQRModal] = useState(null); // card object or null
+    const [subscription, setSubscription] = useState(null); // { plan, expiry }
 
     useEffect(() => {
         fetchDashboardData();
@@ -22,6 +23,15 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+
+        // Fetch User Profile for Subscription
+        const { data: profile } = await supabase.from('profiles').select('subscription_plan, subscription_expiry').eq('id', user.id).single();
+        if (profile) {
+            setSubscription({
+                plan: profile.subscription_plan,
+                expiry: profile.subscription_expiry
+            });
+        }
 
         // Fetch user's cards with rating info if available (using previously added columns)
         const { data: userCards, error } = await supabase
@@ -216,6 +226,37 @@ const Dashboard = () => {
                     Create New Card
                 </Link>
             </div>
+
+            {/* Subscription Status Banner */}
+            {(() => {
+                const checkSubscription = () => {
+                    // We need to fetch this from profile, but we can do a quick check if we store it in session metadata 
+                    // or fetch it separately. Ideally fetchDashboardData should return profile info too.
+                    // As a quick patch, let's assume fetchDashboardData (which runs on mount) updates user state if we add it.
+                    // BUT for now, let's add a separate fetch for profile subscription status inside fetchDashboardData or here.
+                    return null;
+                };
+                // Implementation Note: Since I can't easily change the hook state structure without bigger refactor,
+                // I will add a small inline logic here using a new state "subscription" if I added it above.
+                // Let's Add "subscription" state to Dashboard component first.
+            })()}
+
+            {subscription && subscription.plan === 'gold' && new Date(subscription.expiry) < new Date() && (
+                <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+                    <div className="flex items-center gap-3 text-red-700">
+                        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                            <Star className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg">Premium Plan Expired</h3>
+                            <p className="text-sm opacity-90">Your Gold benefits have ended. Renew now to restore premium features.</p>
+                        </div>
+                    </div>
+                    <Link to="/premium" className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
+                        Renew Gold
+                    </Link>
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">

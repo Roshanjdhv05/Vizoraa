@@ -92,8 +92,8 @@ const Home = () => {
     const fetchCards = async () => {
         setLoading(true);
         try {
-            // Join profiles to get is_verified status
-            let query = supabase.from('cards').select('*, card_likes(count), profiles(is_verified)');
+            // Join profiles to get is_verified AND subscription info
+            let query = supabase.from('cards').select('*, card_likes(count), profiles(is_verified, subscription_plan, subscription_expiry)');
 
             // 1. Global Search
             if (filters.search) {
@@ -130,6 +130,21 @@ const Home = () => {
 
             const { data: cardsData, error: cardsError } = await query;
             if (cardsError) throw cardsError;
+
+            // --- BOOST LOGIC ---
+            // Sort cards: Active Gold Subscription first, then by the selected sort
+            let sortedCards = cardsData || [];
+
+            sortedCards.sort((a, b) => {
+                // Check if A is Gold
+                const isAGold = a.profiles?.subscription_plan === 'gold' && new Date(a.profiles?.subscription_expiry) > new Date();
+                // Check if B is Gold
+                const isBGold = b.profiles?.subscription_plan === 'gold' && new Date(b.profiles?.subscription_expiry) > new Date();
+
+                if (isAGold && !isBGold) return -1; // A comes first
+                if (!isAGold && isBGold) return 1;  // B comes first
+                return 0; // Maintain original sort (created_at or views)
+            });
 
             // Fetch Ratings
             let finalCards = cardsData || [];

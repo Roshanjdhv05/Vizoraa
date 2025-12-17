@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin } from 'lucide-react';
+import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin, Star } from 'lucide-react';
 
 import ModernCard from '../components/Templates/ModernCard';
 import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
@@ -140,17 +140,68 @@ const CreateCard = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // Helper to load Razorpay Script
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
 
-        // Validation for Google Map Link
-        if (formData.google_map_link && !formData.google_map_link.startsWith('http')) {
-            alert('Please enter a valid Google Maps link (e.g., https://maps.app.goo.gl/...)');
-            return;
+    const handlePayment = async () => {
+        const res = await loadRazorpay();
+
+        if (!res) {
+            alert('Razropay SDK failed to load. Are you online?');
+            return false;
         }
 
-        setLoading(true);
+        const razropayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        if (!razropayKey) {
+            alert('Payment Configuration Error: Razorpay Key ID not found.');
+            return false;
+        }
 
+        // 1. Create a dummy order or just use manual client-side capture for prototype
+        // In production, you would call your backend API here to create an order: /api/create-order
+
+        const options = {
+            key: razropayKey,
+            amount: 9900, // 99 INR -> 9900 paise
+            currency: 'INR',
+            name: 'Vizoraa Premium Card',
+            description: 'Unlock Hero Cover Template',
+            image: avatarUrl || 'https://via.placeholder.com/150',
+            handler: function (response) {
+                // Payment Success!
+                // alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+                createCard(true, response.razorpay_payment_id);
+            },
+            prefill: {
+                name: formData.name,
+                email: formData.email,
+                contact: formData.phone
+            },
+            notes: {
+                address: 'Vizoraa Corporate Office'
+            },
+            theme: {
+                color: '#f97316'
+            }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.on('payment.failed', function (response) {
+            alert(`Payment Failed: ${response.error.description}`);
+            setLoading(false);
+        });
+        paymentObject.open();
+    };
+
+    const createCard = async (isPremium = false, paymentId = null) => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
@@ -159,11 +210,13 @@ const CreateCard = () => {
             let finalAvatarUrl = null;
             if (avatarFile) {
                 finalAvatarUrl = await uploadFile(avatarFile, user.id, 'avatars');
+            } else if (avatarUrl && avatarUrl.startsWith('http')) {
+                // Keep existing user avatar if editing (though this is create card)
+                finalAvatarUrl = avatarUrl;
             }
 
             let finalCoverUrl = null;
             if (coverFile) {
-                // Reusing 'avatars' bucket if 'covers' doesn't exist, or assuming 'avatars' is general purpose public bucket
                 finalCoverUrl = await uploadFile(coverFile, user.id, 'avatars');
             }
 
@@ -179,16 +232,40 @@ const CreateCard = () => {
                 ...formData,
                 avatar_url: finalAvatarUrl,
                 cover_url: finalCoverUrl,
-                social_links: processedSocials
+                social_links: processedSocials,
+                is_premium: isPremium, // Track premium status
+                payment_id: paymentId  // Store payment ID if any
             });
 
             if (error) throw error;
             navigate('/dashboard');
 
         } catch (error) {
+            console.error(error);
             alert(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        // Validation for Google Map Link
+        if (formData.google_map_link && !formData.google_map_link.startsWith('http')) {
+            alert('Please enter a valid Google Maps link (e.g., https://maps.app.goo.gl/...)');
+            return;
+        }
+
+        setLoading(true);
+
+        // Check if Premium Template
+        if (formData.template_id === 'hero-cover-profile') {
+            // Trigger Payment Flow
+            await handlePayment();
+        } else {
+            // Create Free Card Directly
+            await createCard(false);
         }
     };
 
@@ -247,33 +324,74 @@ const CreateCard = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
 
-                            {/* Template Selection moved to top for better UX */}
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-slate-800">Choose Template</h3>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {[
-                                        { id: 'modern', name: 'Modern', color: '#6366f1' },
-                                        { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
-                                        { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
-                                        { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
-                                        { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
-                                        { id: 'red-geometric', name: 'Geometric', color: '#EF4444' }
-                                    ].map(template => (
-                                        <button
-                                            key={template.id}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, template_id: template.id })}
-                                            className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${formData.template_id === template.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-indigo-200'}`}
-                                        >
-                                            <div
-                                                className={`w-full h-12 rounded-lg shadow-sm ${template.border ? 'border border-gray-200' : ''}`}
-                                                style={{ background: template.color }}
-                                            ></div>
-                                            <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-indigo-700' : 'text-slate-500'}`}>
-                                                {template.name}
-                                            </span>
-                                        </button>
-                                    ))}
+                            {/* Template Selection */}
+                            <div className="space-y-6">
+                                {/* Standard Templates */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        Standard Templates
+                                        <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Free</span>
+                                    </h3>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {[
+                                            { id: 'modern', name: 'Modern', color: '#6366f1' },
+                                            { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
+                                            { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
+                                            { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
+                                            { id: 'red-geometric', name: 'Geometric', color: '#EF4444' }
+                                        ].map(template => (
+                                            <button
+                                                key={template.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, template_id: template.id })}
+                                                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${formData.template_id === template.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-indigo-200'}`}
+                                            >
+                                                <div
+                                                    className={`w-full h-12 rounded-lg shadow-sm ${template.border ? 'border border-gray-200' : ''}`}
+                                                    style={{ background: template.color }}
+                                                ></div>
+                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-indigo-700' : 'text-slate-500'}`}>
+                                                    {template.name}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Premium Templates */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        Premium Templates
+                                        <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                                            <Star className="w-3 h-3 fill-current" /> Pro
+                                        </span>
+                                    </h3>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {[
+                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' }
+                                        ].map(template => (
+                                            <button
+                                                key={template.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, template_id: template.id })}
+                                                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 overflow-hidden ${formData.template_id === template.id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-amber-200'}`}
+                                            >
+                                                <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">PRO</div>
+                                                <div
+                                                    className={`w-full h-12 rounded-lg shadow-sm relative overflow-hidden`}
+                                                    style={{ background: template.color }}
+                                                >
+                                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-transparent"></div>
+                                                </div>
+                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-amber-700' : 'text-slate-500'}`}>
+                                                    {template.name}
+                                                </span>
+                                                <span className="text-[10px] font-bold text-slate-900 bg-white px-1.5 rounded border border-slate-200">
+                                                    ₹99
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -296,14 +414,17 @@ const CreateCard = () => {
 
                             {/* Cover Image Upload (Only for Hero Template) */}
                             {formData.template_id === 'hero-cover-profile' && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">Cover Image</label>
-                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden">
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                                    <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        Cover Image
+                                        <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
+                                    </label>
+                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
                                         {coverUrl ? (
                                             <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
                                         ) : (
-                                            <div className="text-slate-400">
-                                                <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                            <div className="text-slate-400 py-4">
+                                                <Upload className="w-8 h-8 mx-auto mb-2 opacity-50 group-hover:scale-110 transition-transform" />
                                                 <p className="text-xs">Click to upload cover image</p>
                                             </div>
                                         )}
@@ -315,55 +436,61 @@ const CreateCard = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Full Name</label>
-                                    <input required type="text" name="name" value={formData.name} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Alex Smith" />
+                                    <input required type="text" name="name" value={formData.name} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="e.g. Alex Smith" />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Profession / Title</label>
-                                    <input required type="text" name="profession" value={formData.profession} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Product Designer" />
+                                    <input required type="text" name="profession" value={formData.profession} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="e.g. Product Designer" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Company</label>
-                                    <input type="text" name="company" value={formData.company} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="e.g. Acme Corp" />
+                                    <input type="text" name="company" value={formData.company} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="e.g. Acme Corp" />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">Location</label>
-                                    <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="City, Country" />
-                                </div>
+                                {/* Location restricted to Hero Template */}
+                                {formData.template_id === 'hero-cover-profile' && (
+                                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                        <label className="text-sm font-medium text-slate-700">Location</label>
+                                        <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="City, Country" />
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="space-y-2 mt-4">
-                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-indigo-500" />
-                                    Google Map Location
-                                </label>
-                                <input
-                                    type="text"
-                                    name="google_map_link"
-                                    value={formData.google_map_link}
-                                    onChange={handleChange}
-                                    className="input-field w-full p-2 border rounded-lg"
-                                    placeholder="Paste your Google Maps link (https://maps.google.com...)"
-                                />
-                                <p className="text-xs text-slate-400">Link must start with https://maps.google.com or https://www.google.com/maps</p>
-                            </div>
+                            {formData.template_id === 'hero-cover-profile' && (
+                                <div className="space-y-2 mt-4 animate-in fade-in slide-in-from-top-2">
+                                    <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-indigo-500" />
+                                        Google Map Location
+                                        <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="google_map_link"
+                                        value={formData.google_map_link}
+                                        onChange={handleChange}
+                                        className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                        placeholder="Paste your Google Maps link"
+                                    />
+                                    <p className="text-xs text-slate-400">Link must start with https://maps.google.com</p>
+                                </div>
+                            )}
 
                             <div className="space-y-4 pt-4 border-t border-slate-50">
                                 <h3 className="font-bold text-slate-800">Contact Details</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700">Phone Number</label>
-                                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="+1 234 567 890" />
+                                        <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="+1 234 567 890" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700">Email Address</label>
-                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="alex@example.com" />
+                                        <input type="email" name="email" value={formData.email} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="alex@example.com" />
                                     </div>
                                     <div className="space-y-2 md:col-span-2">
                                         <label className="text-sm font-medium text-slate-700">Website</label>
-                                        <input type="url" name="website" value={formData.website} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" placeholder="https://mysite.com" />
+                                        <input type="url" name="website" value={formData.website} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="https://mysite.com" />
                                     </div>
                                 </div>
                             </div>
@@ -377,13 +504,13 @@ const CreateCard = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube'].map(platform => (
-                                        <div key={platform} className="relative">
+                                        <div key={platform} className="relative group">
                                             <span className="absolute left-3 top-2.5 text-slate-400 text-sm capitalize">{platform === 'linkedin' ? 'in/' : '@'}</span>
                                             <input
                                                 name={platform}
                                                 value={formData.social_links[platform]}
                                                 onChange={handleSocialChange}
-                                                className="pl-10 p-2 border rounded-lg w-full"
+                                                className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                                                 placeholder={platform.charAt(0).toUpperCase() + platform.slice(1)}
                                             />
                                         </div>
@@ -418,14 +545,28 @@ const CreateCard = () => {
                                 </div>
                             </div>
 
-                            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100 p-4 -mx-6 -mb-6 md:-mx-8 md:-mb-8 rounded-b-2xl z-10">
-                                <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-medium hover:bg-slate-50">Cancel</button>
+                            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100 p-4 -mx-6 -mb-6 md:-mx-8 md:-mb-8 rounded-b-2xl z-10 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
+                                <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors">Cancel</button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg shadow-indigo-200"
+                                    className={`px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg transition-all transform active:scale-95 ${formData.template_id === 'hero-cover-profile' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 text-white' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 text-white'}`}
                                 >
-                                    {loading || uploading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save className="w-5 h-5" /> Create Card</>}
+                                    {loading || uploading ? (
+                                        <Loader2 className="animate-spin w-5 h-5" />
+                                    ) : (
+                                        <>
+                                            {formData.template_id === 'hero-cover-profile' ? (
+                                                <>
+                                                    <Star className="w-5 h-5 fill-current" /> Pay & Create Card
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-5 h-5" /> Create Card
+                                                </>
+                                            )}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>

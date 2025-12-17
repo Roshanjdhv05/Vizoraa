@@ -13,6 +13,7 @@ import ViewCard from './pages/ViewCard';
 import CreateCard from './pages/CreateCard';
 import EditCard from './pages/EditCard';
 import SavedCards from './pages/SavedCards';
+import Premium from './pages/Premium';
 
 // Admin Components
 import AdminLayout from './components/Admin/AdminLayout';
@@ -22,6 +23,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminCards from './pages/admin/AdminCards';
 import AdminAds from './pages/admin/AdminAds';
+import AdminPremium from './pages/admin/AdminPremium';
 import { Outlet } from 'react-router-dom';
 
 function App() {
@@ -52,6 +54,7 @@ function App() {
             <Route element={<AdminLayout />}>
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="premium" element={<AdminPremium />} />
               <Route path="cards" element={<AdminCards />} />
               <Route path="ads" element={<AdminAds />} />
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
@@ -68,6 +71,10 @@ function App() {
             <Route
               path="/saved"
               element={session ? <SavedCards /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/premium"
+              element={session ? <Premium /> : <Navigate to="/login" />}
             />
             <Route
               path="/create-card"

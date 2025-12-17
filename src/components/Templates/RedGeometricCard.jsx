@@ -22,16 +22,14 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
         }
     };
 
-
-
     return (
-        <div className="relative w-[340px] md:w-[500px] max-w-full mx-auto group z-0">
+        <div className="relative w-[340px] md:w-[500px] mx-auto group">
             {/* 1. FLIP CONTAINER */}
             <div
                 className="w-full relative cursor-pointer"
                 style={{
                     perspective: '1000px',
-                    aspectRatio: '1.586/1',
+                    aspectRatio: window.innerWidth >= 768 ? '1.586 / 1' : '0.65 / 1'
                 }}
                 onClick={() => setIsFlipped(!isFlipped)}
             >
@@ -91,7 +89,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
 
                     {/* 4. BACK SIDE */}
                     <div
-                        className="absolute inset-0 w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex"
+                        className="absolute inset-0 w-full h-full bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col-reverse md:flex-row"
                         style={{
                             transform: 'rotateY(180deg)',
                             backfaceVisibility: 'hidden',
@@ -99,18 +97,18 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                             zIndex: 1
                         }}
                     >
-                        {/* Left: Contact Info */}
-                        <div className="w-2/3 p-6 md:p-8 flex flex-col justify-center relative z-10">
-                            <div className="mb-4 md:mb-6">
+                        {/* Left: Contact Info (Bottom on mobile, Left on Desktop) */}
+                        <div className="w-full md:w-2/3 p-5 md:p-8 flex flex-col justify-center relative z-10 flex-1 overflow-y-auto md:overflow-visible">
+                            <div className="mb-3 md:mb-6">
                                 <h1 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight mb-1 flex items-center gap-2">
                                     {card.name || "Your Name"}
                                     {isVerified && <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500 text-white" />}
                                 </h1>
-                                <p className="font-medium text-xs md:text-sm opacity-80 mb-3" style={{ color: themeColor }}>{card.profession}</p>
+                                <p className="font-medium text-xs md:text-sm opacity-80 mb-2 md:mb-3" style={{ color: themeColor }}>{card.profession}</p>
 
                                 {/* Rating Section */}
                                 {showRating && (
-                                    <div className="flex flex-col items-start mb-4">
+                                    <div className="flex flex-col items-start mb-3 md:mb-4">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="font-bold text-slate-700">{ratingStats?.average || '0.0'}</span>
                                             <span className="text-xs text-slate-400">({ratingStats?.count || 0})</span>
@@ -126,7 +124,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                                     className={`transition-transform hover:scale-110 focus:outline-none ${star <= (hoverRating || userRating) ? 'text-yellow-400' : 'text-slate-200 hover:text-yellow-300'}`}
                                                 >
                                                     <Star
-                                                        className="w-6 h-6"
+                                                        className="w-5 h-5 md:w-6 md:h-6"
                                                         fill={star <= (hoverRating || userRating) ? "currentColor" : "none"}
                                                     />
                                                 </button>
@@ -142,7 +140,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-slate-50" style={{ color: themeColor }}>
                                             <Phone className="w-3 h-3" />
                                         </div>
-                                        <span className="text-xs md:text-sm text-slate-600 font-medium truncate">{card.phone}</span>
+                                        <a href={`tel:${card.phone}`} className="text-xs md:text-sm text-slate-600 font-medium hover:underline truncate">{card.phone}</a>
                                     </div>
                                 )}
                                 {card.email && (
@@ -150,7 +148,8 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-slate-50" style={{ color: themeColor }}>
                                             <Mail className="w-3 h-3" />
                                         </div>
-                                        <span className="text-xs md:text-sm text-slate-600 font-medium truncate">{card.email}</span>
+                                        {/* REMOVED truncate, added break-all to fix cutting off */}
+                                        <a href={`mailto:${card.email}`} className="text-xs md:text-sm text-slate-600 font-medium break-all hover:underline">{card.email}</a>
                                     </div>
                                 )}
                                 {card.website && (
@@ -158,7 +157,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                         <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-slate-50" style={{ color: themeColor }}>
                                             <Globe className="w-3 h-3" />
                                         </div>
-                                        <span className="text-xs md:text-sm text-slate-600 font-medium truncate">{card.website.replace(/^https?:\/\//, '')}</span>
+                                        <a href={card.website} target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm text-slate-600 font-medium truncate hover:underline">{card.website.replace(/^https?:\/\//, '')}</a>
                                     </div>
                                 )}
 
@@ -199,9 +198,9 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                             </div>
                         </div>
 
-                        {/* Right: Profile Image (Was QR) */}
+                        {/* Right: Profile Image (Top on mobile, Right on Desktop) */}
                         <div
-                            className="w-1/3 relative overflow-hidden flex flex-col items-center justify-center p-2"
+                            className="w-full h-32 md:h-auto md:w-1/3 relative overflow-hidden flex flex-col items-center justify-center p-2 shrink-0"
                             style={{ backgroundColor: themeColor }}
                         >
                             <div className="absolute inset-0" style={{ backgroundColor: '#000000', opacity: 0.1 }}></div>

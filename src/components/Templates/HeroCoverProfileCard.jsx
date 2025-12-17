@@ -115,9 +115,23 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
             </div>
 
             {/* Social Links */}
-            {card.social_links && Object.keys(card.social_links).length > 0 && (
+            {/* Social Links including Website */}
+            {(card.social_links || card.website) && (
                 <div className="flex justify-center flex-wrap gap-4 px-8 mb-8">
-                    {Object.entries(card.social_links).map(([platform, url]) => (
+                    {/* Website Icon */}
+                    {card.website && (
+                        <a
+                            href={card.website}
+                            target="_blank"
+                            className="text-slate-400 hover:text-orange-500 transition-colors"
+                            title="Website"
+                        >
+                            <SocialIcon platform="website" />
+                        </a>
+                    )}
+
+                    {/* Other Socials */}
+                    {card.social_links && Object.entries(card.social_links).map(([platform, url]) => (
                         <a
                             key={platform}
                             href={url}

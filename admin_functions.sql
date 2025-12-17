@@ -33,3 +33,23 @@ BEGIN
   WHERE id = target_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 4. Grant Premium Access (Admin)
+CREATE OR REPLACE FUNCTION public.grant_premium_access(target_user_id UUID, duration_months INTEGER)
+RETURNS VOID AS $$
+DECLARE
+  new_expiry TIMESTAMPTZ;
+BEGIN
+  -- Set expiry to now + months (or extend existing if already valid? For simplicity, we just set from NOW)
+  -- Actually, if they are already premium, maybe we should extend? 
+  -- Requirement says "grant free premium cards and gold plan 1month, 6month...". 
+  -- Let's just set/overwrite for simplicity as "Grant" implies setting it.
+  
+  new_expiry := NOW() + (duration_months || ' months')::INTERVAL;
+  
+  UPDATE public.profiles
+  SET subscription_plan = 'gold',
+      subscription_expiry = new_expiry
+  WHERE id = target_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

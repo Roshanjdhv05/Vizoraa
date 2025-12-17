@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Eye, Star, Bookmark, BadgeCheck } from 'lucide-react';
+import { Heart, Eye, Star, Bookmark, BadgeCheck, Crown } from 'lucide-react';
 
 const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, ratingCount, isVerified }) => {
     // Fallback for avatar
@@ -15,8 +15,11 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                 {card.cover_url ? (
                     <div className="mb-6">
                         {/* Cover Image */}
-                        <div className="h-24 w-full -mx-6 -mt-6 mb-8 relative rounded-t-[32px] overflow-hidden">
-                            <img src={card.cover_url} alt="Cover" className="w-full h-full object-cover" />
+                        <div
+                            className="h-36 -mx-6 -mt-6 mb-6 relative rounded-t-[32px] overflow-hidden border-b border-slate-100"
+                            style={{ width: 'calc(100% + 3rem)' }}
+                        >
+                            <img src={card.cover_url} alt="Cover" className="w-full h-full object-cover object-center" />
                         </div>
 
                         {/* Overlapping Avatar */}
@@ -35,6 +38,12 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                                 <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-center gap-1">
                                     {card.name}
                                     {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />}
+
+                                    {/* Premium Crown - Check profile subscription fromJoined data */}
+                                    {card.profiles?.subscription_plan === 'gold' &&
+                                        new Date(card.profiles?.subscription_expiry) > new Date() && (
+                                            <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                        )}
                                 </h3>
                                 <p className="text-[#7B4BFF] text-sm font-medium mb-0.5">{card.profession}</p>
                                 <p className="text-slate-400 text-xs font-medium">{card.company || 'Freelance'}</p>
@@ -58,6 +67,11 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-center gap-1">
                                 {card.name}
                                 {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white" />}
+                                {/* Premium Crown */}
+                                {card.profiles?.subscription_plan === 'gold' &&
+                                    new Date(card.profiles?.subscription_expiry) > new Date() && (
+                                        <Crown className="w-4 h-4 text-amber-500 fill-amber-500" />
+                                    )}
                             </h3>
                             <p className="text-[#7B4BFF] text-sm font-medium mb-0.5">{card.profession}</p>
                             <p className="text-slate-400 text-xs font-medium">{card.company || 'Freelance'}</p>

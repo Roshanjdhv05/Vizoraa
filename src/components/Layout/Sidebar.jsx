@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X } from 'lucide-react';
+import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X, Crown } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 const Sidebar = ({ session, isOpen, onClose }) => {
@@ -69,6 +69,16 @@ const Sidebar = ({ session, isOpen, onClose }) => {
                             <NavItem to="/dashboard" icon={LayoutGrid} label="Dashboard" />
                             <NavItem to="/saved" icon={Bookmark} label="Saved Cards" />
                             <NavItem to="/create-card" icon={PlusSquare} label="Create Card" />
+                            <div className="pt-2">
+                                <NavLink
+                                    to="/premium"
+                                    onClick={onClose}
+                                    className={({ isActive }) => `flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group ${isActive ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-200 hover:shadow-amber-300 hover:scale-[1.02]'}`}
+                                >
+                                    <Crown className="w-5 h-5 fill-current" />
+                                    <span className="font-bold text-sm">Upgrade to Gold</span>
+                                </NavLink>
+                            </div>
                         </>
                     )}
                 </div>
