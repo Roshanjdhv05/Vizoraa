@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Loader2, ArrowLeft, Star } from 'lucide-react';
+import { Loader2, ArrowLeft, Star, X } from 'lucide-react';
 import { addRating } from '../lib/supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -352,7 +352,7 @@ const Home = () => {
     };
 
     return (
-        <div className="p-8 pb-20 max-w-[1600px] mx-auto min-h-screen">
+        <div className="p-4 md:p-8 pb-20 max-w-[1600px] mx-auto min-h-screen">
             {/* Header Section */}
             <div className="mb-10 text-center xl:text-left">
                 <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Discover Amazing Digital Cards</h1>
@@ -381,7 +381,7 @@ const Home = () => {
                     }} className="text-[#7B4BFF] font-bold hover:underline">Clear all filters</button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
                     {(() => {
                         // Interleave Ads logic
                         // Need separate ad list or if I mixed them in 'cards' state?
@@ -426,17 +426,17 @@ const Home = () => {
             {selectedCard && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedCard(null)}></div>
-                    <div className="relative z-10 w-full max-w-5xl h-[90vh] bg-slate-100 rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fadeInUp">
-                        <button onClick={() => setSelectedCard(null)} className="absolute top-6 left-6 z-50 p-3 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-lg text-slate-800">
-                            <ArrowLeft className="w-5 h-5" />
+                    <div className="relative z-10 w-full max-w-5xl h-[85vh] md:h-[90vh] bg-slate-100 rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fadeInUp">
+                        <button onClick={() => setSelectedCard(null)} className="absolute top-4 right-4 md:top-6 md:left-6 md:right-auto z-50 p-2 md:p-3 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-lg text-slate-800">
+                            {/* Mobile: Close X, Desktop: Back Arrow */}
+                            <div className="md:hidden"><X className="w-5 h-5" /></div>
+                            <div className="hidden md:block"><ArrowLeft className="w-5 h-5" /></div>
                         </button>
 
                         <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-12 gap-8 custom-scrollbar">
                             <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl px-4">
                                 {renderSelectedCard()}
                             </div>
-
-
                         </div>
                     </div>
                 </div>

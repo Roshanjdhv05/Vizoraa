@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Search, Loader2, Crown, ShieldCheck, Check, Clock, CreditCard, LayoutTemplate, UserX } from 'lucide-react';
+import { Search, Loader2, Crown, ShieldCheck, Check, Clock, CreditCard, LayoutTemplate, Trash2 } from 'lucide-react';
 
 const AdminPremium = () => {
     const [users, setUsers] = useState([]);
@@ -113,7 +113,7 @@ const AdminPremium = () => {
     };
 
     const handleRevokeAccess = async (user) => {
-        if (!window.confirm(`Are you sure you want to REVOKE all upgrades for ${user.full_name || user.email}? This will remove Gold plan and locked templates.`)) return;
+        if (!window.confirm(`Are you sure you want to REVOKE all upgrades for ${user.full_name || user.email}? This will remove Gold plan and all unlocked templates.`)) return;
 
         try {
             const { error } = await supabase.rpc('revoke_user_upgrades', {
@@ -122,8 +122,8 @@ const AdminPremium = () => {
 
             if (error) throw error;
 
-            alert('Access revoked successfully.');
-            fetchData();
+            alert('Successfully revoked all upgrades.');
+            fetchData(); // Refresh list
         } catch (error) {
             console.error('Error revoking access:', error);
             alert('Failed to revoke access: ' + error.message);
@@ -337,27 +337,29 @@ const AdminPremium = () => {
                                                 <p className="text-xs text-slate-500">{user.email}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right flex flex-col items-end gap-1">
-                                            {user.subscription_plan === 'gold' && new Date(user.subscription_expiry) > new Date() && (
-                                                <div className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
-                                                    <Clock className="w-3 h-3" />
-                                                    Exp: {new Date(user.subscription_expiry).toLocaleDateString()}
-                                                </div>
-                                            )}
-                                            {user.unlocked_templates && user.unlocked_templates.length > 0 && (
-                                                <div className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
-                                                    <LayoutTemplate className="w-3 h-3" />
-                                                    {user.unlocked_templates.length} Template{user.unlocked_templates.length > 1 ? 's' : ''}
-                                                </div>
-                                            )}
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-right flex flex-col items-end gap-1">
+                                                {user.subscription_plan === 'gold' && new Date(user.subscription_expiry) > new Date() && (
+                                                    <div className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
+                                                        <Clock className="w-3 h-3" />
+                                                        Exp: {new Date(user.subscription_expiry).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                                {user.unlocked_templates && user.unlocked_templates.length > 0 && (
+                                                    <div className="flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                                                        <LayoutTemplate className="w-3 h-3" />
+                                                        {user.unlocked_templates.length} Template{user.unlocked_templates.length > 1 ? 's' : ''}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => handleRevokeAccess(user)}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Revoke All Access"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => handleRevokeAccess(user)}
-                                            className="ml-3 p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Revoke All Access"
-                                        >
-                                            <UserX className="w-5 h-5" />
-                                        </button>
                                     </div>
                                 ))}
                             </div>

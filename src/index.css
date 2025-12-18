@@ -38,6 +38,23 @@ body {
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* Prevent horizontal scroll on mobile */
+}
+
+/* Global Responsive Resets */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  /* Removes bottom space */
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
 }
 
 /* Utilities */

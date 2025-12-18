@@ -131,7 +131,7 @@ const AdvancedSearchFilter = ({ filters, setFilters, onSearch, occupations = [] 
                         value={filters.search}
                         onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                         placeholder="Search by name, service, or keyword..."
-                        className="w-full pl-16 pr-32 py-5 rounded-full bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 outline-none text-slate-700 text-lg font-medium placeholder:text-slate-400 focus:shadow-[0_8px_30px_rgba(123,75,255,0.15)] focus:border-[#7B4BFF]/20 transition-all hover:border-gray-200"
+                        className="w-full pl-16 pr-12 lg:pr-32 py-5 rounded-full bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 outline-none text-slate-700 text-lg font-medium placeholder:text-slate-400 focus:shadow-[0_8px_30px_rgba(123,75,255,0.15)] focus:border-[#7B4BFF]/20 transition-all hover:border-gray-200"
                     />
 
                     {/* Desktop Search Button */}

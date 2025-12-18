@@ -33,7 +33,7 @@ const MainLayout = ({ children, session }) => {
                 So: Sidebar has `hidden lg:flex` (handled inside Sidebar component actually via `-translate-x-full lg:translate-x-0`).
                 Here margin should be `lg:ml-[280px]`.
             */}
-            <main className="transition-all duration-300 ease-in-out lg:ml-[280px] pt-20 md:pt-0 min-h-screen">
+            <main className="transition-[margin,padding] duration-300 ease-in-out lg:ml-[280px] pt-20 md:pt-0 min-h-screen">
                 <div className="animate-fadeIn">
                     {children}
                 </div>

@@ -9,6 +9,25 @@ export default {
             fontFamily: {
                 sans: ['Inter', 'system-ui', 'sans-serif'],
             },
+            keyframes: {
+                slideIn: {
+                    '0%': { transform: 'translateX(-100%)' },
+                    '100%': { transform: 'translateX(0)' },
+                },
+                slideInRight: {
+                    '0%': { transform: 'translateX(100%)' },
+                    '100%': { transform: 'translateX(0)' },
+                },
+                fadeIn: {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                }
+            },
+            animation: {
+                slideIn: 'slideIn 0.3s ease-out forwards',
+                slideInRight: 'slideInRight 0.3s ease-out forwards',
+                fadeIn: 'fadeIn 0.2s ease-out forwards',
+            }
         },
     },
     plugins: [],
