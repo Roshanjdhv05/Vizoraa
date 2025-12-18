@@ -39,31 +39,22 @@ const Home = () => {
     const [likedCards, setLikedCards] = useState(new Set());
     const [savedCards, setSavedCards] = useState(new Set());
 
-    // Modal State
-    const [selectedCard, setSelectedCard] = useState(null);
+    // Inline Expansion State
+    const [expandedCardId, setExpandedCardId] = useState(null);
+    const [expandedCardData, setExpandedCardData] = useState(null); // Store the full card object for the view
+    const [expandedPosition, setExpandedPosition] = useState({ top: 0, left: 0, width: 320, placement: 'bottom' });
+    const cardRefs = React.useRef({});
+    const mainContainerRef = React.useRef(null);
 
     useEffect(() => {
         checkUser();
         fetchOccupations();
     }, []);
 
-    // Initial Fetch on mount only? 
-    // User requested "Search button" but "Sorting updates results live".
-    // I'll make useEffect trigger on sort change, but maybe not on every keystroke of filters unless button clicked.
-    // However, to keep it snappy and consistent with "React" reactive patterns, 
-    // often we just trigger on filters change with debounce.
-    // Given the component has a dedicated Search button, I'll pass a specific handler 'onSearch' for the button.
-    // BUT 'sort' should trigger immediately.
-
     useEffect(() => {
         // Trigger fetch on Sort change immediately
         fetchCards();
     }, [filters.sort]);
-
-    // For other filters, we wait for explicit "Search" button click OR we can auto-fetch.
-    // The user explicitly asked for a "Search" button. 
-    // I will Fetch on Mount, then Fetch on Search Click, then Fetch on Sort Change.
-    // But if I only put filters.sort in dependency, Search button needs to call fetchCards too.
 
     const fetchOccupations = async () => {
         const { data } = await supabase.from('cards').select('profession');
@@ -291,7 +282,14 @@ const Home = () => {
         }
     };
 
-    const openCard = async (card) => {
+    const handleExpand = async (card) => {
+        // If clicking the same card, collapse it
+        if (expandedCardId === card.id) {
+            handleCollapse();
+            return;
+        }
+
+        // Fetch user rating for the new card
         let userRating = 0;
         if (user) {
             const { data } = await supabase.from('card_ratings')
@@ -302,10 +300,13 @@ const Home = () => {
             if (data) userRating = data.rating;
         }
 
-        setSelectedCard({ ...card, user_rating: userRating });
+        const cardWithRating = { ...card, user_rating: userRating };
 
+        // Update view count using RPC for security/atomic increment
         try {
-            await supabase.from('cards').update({ view_count: (card.view_count || 0) + 1 }).eq('id', card.id);
+            // NEW: Call RPC function
+            await supabase.rpc('increment_card_view', { card_id_input: card.id });
+
             setCards(prev => prev.map(c => {
                 if (c.id === card.id) {
                     return { ...c, view_count: (c.view_count || 0) + 1 };
@@ -315,44 +316,131 @@ const Home = () => {
         } catch (error) {
             console.error('Error updating view count:', error);
         }
+
+        setExpandedCardData(cardWithRating);
+        setExpandedCardId(card.id);
+
+        // Smooth scroll to element
+        // Give a small delay to allow Grid state modification (col-span-full) to render
+        setTimeout(() => {
+            const element = cardRefs.current[card.id];
+            const mainContainer = mainContainerRef.current;
+
+            if (element && mainContainer) {
+                // Mobile: Scroll to view
+                if (window.innerWidth < 768) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    return;
+                }
+
+                // Desktop: Viewport-Aware Positioning
+                const cardRect = element.getBoundingClientRect();
+                const mainRect = mainContainer.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+
+                const POPUP_HEIGHT_ESTIMATE = 650; // Max height max-h-[90vh] or fixed estimate
+                const POPUP_WIDTH = Math.min(600, window.innerWidth - 32); // Increased width for better visibility
+
+                // Calculate Horizontal Center
+                const cardCenter = cardRect.left + (cardRect.width / 2);
+                const leftPos = cardCenter - (POPUP_WIDTH / 2) - mainRect.left;
+
+                // Decide Placement (Top vs Bottom)
+                // Check space below
+                const spaceBelow = viewportHeight - cardRect.bottom;
+                const spaceAbove = cardRect.top;
+
+                let placement = 'bottom';
+                let topPos = 0;
+
+                // Prefer Bottom if fits
+                if (spaceBelow > POPUP_HEIGHT_ESTIMATE || spaceBelow > spaceAbove) {
+                    placement = 'bottom';
+                    // Position right below the card
+                    topPos = (cardRect.bottom - mainRect.top) + 12; // +12px gap
+                } else {
+                    placement = 'top';
+                    // Position right above the card
+                    // We need to set 'top' such that the bottom of popup hits card top
+                    // But since height is dynamic, using 'bottom' css property might be easier if we knew container height
+                    // For absolute positioning from top:
+                    // top = (cardRect.top - mainRect.top) - POPUP_HEIGHT_ESTIMATE (approx) ?? No, this is risky if height varies.
+                    // Better: Use `bottom` CSS property if placement is top? 
+                    // Or just anchor to top and translate -100%?
+                    // Let's use standard top anchor for simplicity if we can.
+                    // Actually, `top` based positioning for 'above' requires knowing the height.
+                    // The user request says "Open ... above ... Ensure full card is visible".
+                    // If we rely on standard flow, `transform: translateY(-100%)` works if we position at card Top.
+
+                    topPos = (cardRect.top - mainRect.top) - 12; // Position at Top edge, we will translate -100% in CSS
+                }
+
+                setExpandedPosition({
+                    top: topPos,
+                    left: leftPos,
+                    width: POPUP_WIDTH,
+                    placement
+                });
+            }
+        }, 50);
     };
 
-    const renderSelectedCard = () => {
-        if (!selectedCard) return null;
-        const isLiked = likedCards.has(selectedCard.id);
-        const isSaved = savedCards.has(selectedCard.id);
+    const handleCollapse = () => {
+        setExpandedCardId(null);
+        setExpandedCardData(null);
+    };
+
+    const renderExpandedView = () => {
+        if (!expandedCardData) return null;
+        const isLiked = likedCards.has(expandedCardData.id);
+        const isSaved = savedCards.has(expandedCardData.id);
         const props = {
-            card: selectedCard,
+            card: expandedCardData,
             isSaved,
             isLiked,
-            userRating: 0,
-            ratingStats: { average: selectedCard.rating_avg || 0, count: selectedCard.rating_count || 0 },
-            handleLike: (e) => handleLike(e, selectedCard.id),
-            handleSave: (e) => handleSave(e, selectedCard.id),
+            userRating: expandedCardData.user_rating || 0,
+            ratingStats: { average: expandedCardData.rating_avg || 0, count: expandedCardData.rating_count || 0 },
+            handleLike: (e) => handleLike(e, expandedCardData.id),
+            handleSave: (e) => handleSave(e, expandedCardData.id),
             showRating: true,
-            isVerified: selectedCard.profiles?.is_verified,
+            isVerified: expandedCardData.profiles?.is_verified,
             handleRate: async (rating) => {
                 if (!user) return navigate('/login');
-                const { error } = await addRating(selectedCard.id, user.id, rating);
+                const { error } = await addRating(expandedCardData.id, user.id, rating);
                 if (!error) {
-                    setSelectedCard(prev => ({ ...prev, user_rating: rating }));
+                    setExpandedCardData(prev => ({ ...prev, user_rating: rating }));
                     fetchCards();
                 }
             }
         };
 
-        switch (selectedCard.template_id) {
-            case 'conference-gradient': return <ConferenceGradientCard {...props} />;
-            case 'minimalist': return <MinimalistCard {...props} />;
-            case 'glassmorphism': return <GlassmorphismCard {...props} />;
-            case 'red-geometric': return <RedGeometricCard {...props} />;
-            case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
-            case 'modern': default: return <ModernCard {...props} />;
+        let CardComponent;
+        switch (expandedCardData.template_id) {
+            case 'conference-gradient': CardComponent = ConferenceGradientCard; break;
+            case 'minimalist': CardComponent = MinimalistCard; break;
+            case 'glassmorphism': CardComponent = GlassmorphismCard; break;
+            case 'red-geometric': CardComponent = RedGeometricCard; break;
+            case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
+            case 'modern': default: CardComponent = ModernCard; break;
         }
+
+        return (
+            <div className="w-full bg-slate-50 rounded-[32px] p-6 md:p-12 relative animate-fade-in shadow-inner border border-slate-200 mt-4 mb-8 flex flex-col items-center">
+                <button
+                    onClick={handleCollapse}
+                    className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors z-10"
+                >
+                    <X className="w-6 h-6 text-slate-500" />
+                </button>
+                <div className="w-full max-w-xl">
+                    <CardComponent {...props} />
+                </div>
+            </div>
+        );
     };
 
     return (
-        <div className="p-4 md:p-8 pb-20 max-w-[1600px] mx-auto min-h-screen">
+        <div ref={mainContainerRef} className="p-4 md:p-8 pb-20 max-w-[1600px] mx-auto min-h-screen relative">
             {/* Header Section */}
             <div className="mb-10 text-center xl:text-left">
                 <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Discover Amazing Digital Cards</h1>
@@ -381,67 +469,193 @@ const Home = () => {
                     }} className="text-[#7B4BFF] font-bold hover:underline">Clear all filters</button>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-                    {(() => {
-                        // Interleave Ads logic
-                        // Need separate ad list or if I mixed them in 'cards' state?
-                        // 'cards' state currently holds just card objects. 
-                        // I will mix them right here during render for simplicity if I have the ads list in state.
-                        // But I haven't added ads to state yet.
-                        // Let's modify fetchCards to mix them into 'cards' state or add a new 'ads' state.
-                        // I will assume I updated fetchCards to mix them or store ads separately.
-                        // Let's rely on 'mixedItems' which I will compute in the body if I had separate states.
-                        // Or better, let 'cards' state hold mixed items.
-                        // Update: Since I am replacing the Grid section, I will assume 'cards' state now holds mixed items.
-                        // I will handle the logic in the fetchCards update below.
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 content-start relative">
+                    {cards.map((item, index) => {
+                        if (item.type === 'ad') {
+                            return <div key={`ad-${item.id}-${index}`} className="col-span-1"><AdCard ad={item} /></div>;
+                        }
 
-                        return cards.map((item, index) => {
-                            if (item.type === 'ad') {
-                                return <AdCard key={`ad-${item.id}-${index}`} ad={item} />;
-                            }
+                        // It is a card
+                        const card = item;
+                        const isExpanded = expandedCardId === card.id;
 
-                            // It is a card
-                            const card = item;
-                            return (
-                                <CardItem
-                                    key={card.id}
-                                    card={card}
-                                    isLiked={likedCards.has(card.id)}
-                                    isSaved={savedCards.has(card.id)}
-                                    // Pass isVerified from the join
-                                    isVerified={card.profiles?.is_verified}
-                                    ratingAvg={card.rating_avg}
-                                    ratingCount={card.rating_count}
-                                    onLike={(e) => handleLike(e, card.id)}
-                                    onSave={(e) => handleSave(e, card.id)}
-                                    onView={openCard}
-                                />
-                            );
-                        });
-                    })()}
+                        // Identify if this row should be handled differently? 
+                        // CSS Grid auto-flow with col-span-full naturally pushes items down.
+                        // However, standard Masonry or some grid libraries might mess this up, 
+                        // but `grid-cols-X` usually handles explicit col-spans by breaking the row.
+
+                        return (
+                            <React.Fragment key={card.id}>
+                                {/* 
+                                    If expanded, we render the container as col-span-full.
+                                    Inside, we can render TWO things or ONE thing?
+                                    Option A: Render the Card Item AND the Expanded View separately?
+                                    Option B: Determine visually what we want. 
+                                    User wants: "Expands inline". 
+                                    Usually this means the Grid Item *becomes* the Expanded view, 
+                                    OR the Expanded view appears *below* the current row.
+                                    
+                                    If we set col-span-full on the Card Item itself, 
+                                    it becomes huge. That might be okay if we change its internal layout?
+                                    
+                                    Or, we wrap the Item and the Expanded content in a Fragment.
+                                    The Item stays col-span-1.
+                                    The Expanded Content is a sibling with col-span-full.
+                                    
+                                    If we do that, the Expanded Content will appear *after* this card.
+                                    In a dense grid, that might be right next to it, 
+                                    or it might leave a gap if the grid isn't dense.
+                                    
+                                    Actually, for a true "Google Images" style inline expansion in a grid,
+                                    you typically insert a row *after* the current visual row. 
+                                    That requires knowing how many cols are in the row to calculate 
+                                    where to insert the full-width item. 
+                                    
+                                    Simpler approach requested: "Inline expandable card".
+                                    If I make this specific card `col-span-full`, it will take the WHOLE row.
+                                    Previous cards stay above. Following cards go below.
+                                    This is the most robust "CSS Grid only" way without complex JS math for rows.
+                                    
+                                    Let's try: 
+                                    Container is `col-span-1` normally.
+                                    If expanded, Container becomes `col-span-full`.
+                                    Inside Container, we switch from `CardItem` to `DetailedView`?
+                                    Or we show `DetailedView`?
+                                    
+                                    If we switch completely, the small card disappears.
+                                    That might be disorienting.
+                                    
+                                    Better UX:
+                                    When expanded, show the Enhanced View which typically *contains* the card details 
+                                    plus extra stuff. The detailed view I built above has the card preview in it.
+                                    So essentially we are swapping the "Thumbnail" for the "Main View".
+                                    
+                                    So, yes: Container becomes col-span-full.
+                                    Content changes to `renderExpandedView`.
+                                */}
+
+                                <div
+                                    ref={el => cardRefs.current[card.id] = el}
+                                    className={`transition-all duration-300 h-full ${isExpanded ? 'col-span-1 md:col-span-1' : 'col-span-1'}`}
+                                >
+                                    {isExpanded ? (
+                                        <>
+                                            {/* Mobile: Show Exapnded View Inline */}
+                                            <div className="md:hidden">
+                                                {renderExpandedView()}
+                                            </div>
+
+                                            {/* Desktop: Show Normal Card Item (Modal handles detailed view) */}
+                                            <div className="hidden md:block h-full">
+                                                <CardItem
+                                                    card={card}
+                                                    isLiked={likedCards.has(card.id)}
+                                                    isSaved={savedCards.has(card.id)}
+                                                    isVerified={card.profiles?.is_verified}
+                                                    ratingAvg={card.rating_avg}
+                                                    ratingCount={card.rating_count}
+                                                    onLike={(e) => handleLike(e, card.id)}
+                                                    onSave={(e) => handleSave(e, card.id)}
+                                                    onView={handleExpand}
+                                                />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <CardItem
+                                            card={card}
+                                            isLiked={likedCards.has(card.id)}
+                                            isSaved={savedCards.has(card.id)}
+                                            isVerified={card.profiles?.is_verified}
+                                            ratingAvg={card.rating_avg}
+                                            ratingCount={card.rating_count}
+                                            onLike={(e) => handleLike(e, card.id)}
+                                            onSave={(e) => handleSave(e, card.id)}
+                                            onView={handleExpand}
+                                        />
+                                    )}
+                                </div>
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
             )}
 
-            {/* Modal */}
-            {selectedCard && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedCard(null)}></div>
-                    <div className="relative z-10 w-full max-w-5xl h-[85vh] md:h-[90vh] bg-slate-100 rounded-[32px] md:rounded-[40px] shadow-2xl overflow-hidden flex flex-col md:flex-row animate-fadeInUp">
-                        <button onClick={() => setSelectedCard(null)} className="absolute top-4 right-4 md:top-6 md:left-6 md:right-auto z-50 p-2 md:p-3 bg-white/80 hover:bg-white backdrop-blur rounded-full transition-all shadow-lg text-slate-800">
-                            {/* Mobile: Close X, Desktop: Back Arrow */}
-                            <div className="md:hidden"><X className="w-5 h-5" /></div>
-                            <div className="hidden md:block"><ArrowLeft className="w-5 h-5" /></div>
-                        </button>
 
-                        <div className="flex-1 overflow-y-auto w-full flex flex-col items-center py-12 gap-8 custom-scrollbar">
-                            <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl px-4">
-                                {renderSelectedCard()}
-                            </div>
+            {/* Desktop Modal Overlay */}
+            {/* Desktop Modal/Popup Overlay */}
+            {expandedCardData && (
+                <>
+                    {/* Transparent Fixed Backdrop */}
+                    <div className="hidden md:block fixed inset-0 z-40 bg-transparent" onClick={handleCollapse}></div>
+
+                    {/* Absolute Popup Content */}
+                    <div
+                        className={`hidden md:flex absolute z-50 flex-col items-center
+                            ${expandedPosition.placement === 'bottom' ? 'origin-top animate-slide-down' : 'origin-bottom animate-slide-up'}
+                        `}
+                        style={{
+                            top: expandedPosition.top,
+                            left: expandedPosition.left,
+                            width: expandedPosition.width,
+                            // If placement is top, we need to shift it up by its own height.
+                            // calculated top was card Top. 
+                            transform: expandedPosition.placement === 'top' ? 'translateY(-100%)' : 'none'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center border border-slate-200">
+                            <button
+                                onClick={handleCollapse}
+                                className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors z-10"
+                            >
+                                <X className="w-5 h-5 text-slate-500" />
+                            </button>
+
+                            {/* Reuse Render Logic */}
+                            {(() => {
+                                const isLiked = likedCards.has(expandedCardData.id);
+                                const isSaved = savedCards.has(expandedCardData.id);
+                                const props = {
+                                    card: expandedCardData,
+                                    isSaved,
+                                    isLiked,
+                                    userRating: expandedCardData.user_rating || 0,
+                                    ratingStats: { average: expandedCardData.rating_avg || 0, count: expandedCardData.rating_count || 0 },
+                                    handleLike: (e) => handleLike(e, expandedCardData.id),
+                                    handleSave: (e) => handleSave(e, expandedCardData.id),
+                                    showRating: true,
+                                    isVerified: expandedCardData.profiles?.is_verified,
+                                    handleRate: async (rating) => {
+                                        if (!user) return navigate('/login');
+                                        const { error } = await addRating(expandedCardData.id, user.id, rating);
+                                        if (!error) {
+                                            setExpandedCardData(prev => ({ ...prev, user_rating: rating }));
+                                            fetchCards();
+                                        }
+                                    }
+                                };
+
+                                let CardComponent;
+                                switch (expandedCardData.template_id) {
+                                    case 'conference-gradient': CardComponent = ConferenceGradientCard; break;
+                                    case 'minimalist': CardComponent = MinimalistCard; break;
+                                    case 'glassmorphism': CardComponent = GlassmorphismCard; break;
+                                    case 'red-geometric': CardComponent = RedGeometricCard; break;
+                                    case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
+                                    case 'modern': default: CardComponent = ModernCard; break;
+                                }
+
+                                return (
+                                    <div className="w-full flex justify-center">
+                                        <CardComponent {...props} />
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </div>
-                </div>
+                </>
             )}
-        </div>
+        </div >
     );
 };
 

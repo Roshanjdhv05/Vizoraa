@@ -75,7 +75,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                             </div>
 
                             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-wider uppercase drop-shadow-lg mb-1">
-                                {card.company || card.name || "Your Company"}
+                                {card.name || "Your Name"}
                             </h1>
                             <p className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase" style={{ color: themeColor }}>
                                 {card.profession || "Professional Title"}
@@ -101,7 +101,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                         <div className="w-full md:w-2/3 p-5 md:p-8 flex flex-col justify-center relative z-10 flex-1 overflow-y-auto md:overflow-visible">
                             <div className="mb-3 md:mb-6">
                                 <h1 className="text-xl md:text-2xl font-bold text-slate-900 leading-tight mb-1 flex items-center gap-2">
-                                    {card.name || "Your Name"}
+                                    {card.company || "Your Company"}
                                     {isVerified && <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500 text-white" />}
                                 </h1>
                                 <p className="font-medium text-xs md:text-sm opacity-80 mb-2 md:mb-3" style={{ color: themeColor }}>{card.profession}</p>

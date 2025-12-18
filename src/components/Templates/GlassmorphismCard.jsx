@@ -17,7 +17,7 @@ const GlassmorphismCard = ({ card, isSaved, isLiked, userRating, handleLike, han
     };
 
     return (
-        <div className="w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative min-h-[600px] flex flex-col items-center p-6 text-white"
+        <div className="w-full rounded-3xl overflow-hidden shadow-2xl relative min-h-[600px] flex flex-col items-center p-6 text-white"
             style={{ background: 'linear-gradient(45deg, #FC466B, #3F5EFB)' }}>
 
             {/* Glass Container */}

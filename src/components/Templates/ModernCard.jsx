@@ -29,7 +29,7 @@ const ModernCard = ({ card, isSaved, isLiked, userRating, handleLike, handleSave
     };
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl relative">
+        <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl relative">
             {/* Header / Banner */}
             <div
                 className="h-44 bg-gradient-to-br from-indigo-500 to-purple-600 relative p-6 text-white flex flex-col justify-between"
