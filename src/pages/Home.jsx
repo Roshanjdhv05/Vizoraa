@@ -17,6 +17,8 @@ import MinimalistCard from '../components/Templates/MinimalistCard';
 import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
 import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
+import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
+import CircularModernCard from '../components/Templates/CircularModernCard';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -333,51 +335,38 @@ const Home = () => {
                     return;
                 }
 
-                // Desktop: Viewport-Aware Positioning
+                // Desktop: Viewport-Aware Positioning (Fixed coordinates)
                 const cardRect = element.getBoundingClientRect();
-                const mainRect = mainContainer.getBoundingClientRect();
                 const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
 
-                const POPUP_HEIGHT_ESTIMATE = 650; // Max height max-h-[90vh] or fixed estimate
-                const POPUP_WIDTH = Math.min(600, window.innerWidth - 32); // Increased width for better visibility
+                const POPUP_HEIGHT_ESTIMATE = 650;
+                const POPUP_WIDTH = Math.min(600, viewportWidth - 32);
 
-                // Calculate Horizontal Center
-                const cardCenter = cardRect.left + (cardRect.width / 2);
-                const leftPos = cardCenter - (POPUP_WIDTH / 2) - mainRect.left;
+                // 1. Calculate Horizontal Position (Centered on Card, but Clamped)
+                let leftPx = cardRect.left + (cardRect.width / 2) - (POPUP_WIDTH / 2);
 
-                // Decide Placement (Top vs Bottom)
-                // Check space below
+                // Clamp horizontal to viewport edges (16px padding)
+                leftPx = Math.max(16, Math.min(leftPx, viewportWidth - POPUP_WIDTH - 16));
+
+                // 2. Decide Vertical Placement (Top vs Bottom)
                 const spaceBelow = viewportHeight - cardRect.bottom;
                 const spaceAbove = cardRect.top;
 
                 let placement = 'bottom';
-                let topPos = 0;
+                let topPx = 0;
 
-                // Prefer Bottom if fits
                 if (spaceBelow > POPUP_HEIGHT_ESTIMATE || spaceBelow > spaceAbove) {
                     placement = 'bottom';
-                    // Position right below the card
-                    topPos = (cardRect.bottom - mainRect.top) + 12; // +12px gap
+                    topPx = cardRect.bottom + 12; // 12px gap
                 } else {
                     placement = 'top';
-                    // Position right above the card
-                    // We need to set 'top' such that the bottom of popup hits card top
-                    // But since height is dynamic, using 'bottom' css property might be easier if we knew container height
-                    // For absolute positioning from top:
-                    // top = (cardRect.top - mainRect.top) - POPUP_HEIGHT_ESTIMATE (approx) ?? No, this is risky if height varies.
-                    // Better: Use `bottom` CSS property if placement is top? 
-                    // Or just anchor to top and translate -100%?
-                    // Let's use standard top anchor for simplicity if we can.
-                    // Actually, `top` based positioning for 'above' requires knowing the height.
-                    // The user request says "Open ... above ... Ensure full card is visible".
-                    // If we rely on standard flow, `transform: translateY(-100%)` works if we position at card Top.
-
-                    topPos = (cardRect.top - mainRect.top) - 12; // Position at Top edge, we will translate -100% in CSS
+                    topPx = cardRect.top - 12; // 12px gap (This is the anchor point for bottom-up transform)
                 }
 
                 setExpandedPosition({
-                    top: topPos,
-                    left: leftPos,
+                    top: topPx,
+                    left: leftPx,
                     width: POPUP_WIDTH,
                     placement
                 });
@@ -421,6 +410,7 @@ const Home = () => {
             case 'glassmorphism': CardComponent = GlassmorphismCard; break;
             case 'red-geometric': CardComponent = RedGeometricCard; break;
             case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
+            case 'circular-modern': CardComponent = CircularModernCard; break;
             case 'modern': default: CardComponent = ModernCard; break;
         }
 
@@ -588,17 +578,15 @@ const Home = () => {
                     {/* Transparent Fixed Backdrop */}
                     <div className="hidden md:block fixed inset-0 z-40 bg-transparent" onClick={handleCollapse}></div>
 
-                    {/* Absolute Popup Content */}
+                    {/* Fixed Popup Content */}
                     <div
-                        className={`hidden md:flex absolute z-50 flex-col items-center
+                        className={`hidden md:flex fixed z-50 flex-col items-center
                             ${expandedPosition.placement === 'bottom' ? 'origin-top animate-slide-down' : 'origin-bottom animate-slide-up'}
                         `}
                         style={{
                             top: expandedPosition.top,
                             left: expandedPosition.left,
                             width: expandedPosition.width,
-                            // If placement is top, we need to shift it up by its own height.
-                            // calculated top was card Top. 
                             transform: expandedPosition.placement === 'top' ? 'translateY(-100%)' : 'none'
                         }}
                         onClick={(e) => e.stopPropagation()}
@@ -642,6 +630,8 @@ const Home = () => {
                                     case 'glassmorphism': CardComponent = GlassmorphismCard; break;
                                     case 'red-geometric': CardComponent = RedGeometricCard; break;
                                     case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
+                                    case 'professional-dev': CardComponent = ProfessionalDevCard; break;
+                                    case 'circular-modern': CardComponent = CircularModernCard; break;
                                     case 'modern': default: CardComponent = ModernCard; break;
                                 }
 

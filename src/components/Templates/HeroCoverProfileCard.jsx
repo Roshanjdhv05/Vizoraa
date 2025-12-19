@@ -101,6 +101,15 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                 </div>
             )}
 
+            {/* About Section */}
+            {card.about && (
+                <div className="px-8 mb-6 text-center w-full">
+                    <p className="text-sm text-slate-600 leading-relaxed font-medium break-words whitespace-pre-wrap">
+                        {card.about}
+                    </p>
+                </div>
+            )}
+
             {/* 5. Primary Action Buttons */}
             <div className="flex flex-col items-center gap-4 mb-8">
                 {card.email && (

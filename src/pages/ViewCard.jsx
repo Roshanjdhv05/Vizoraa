@@ -6,7 +6,9 @@ import ModernCard from '../components/Templates/ModernCard';
 import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
 import MinimalistCard from '../components/Templates/MinimalistCard';
 import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
-import RedGeometricCard from '../components/Templates/RedGeometricCard'; // Added
+import RedGeometricCard from '../components/Templates/RedGeometricCard';
+import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
+import CircularModernCard from '../components/Templates/CircularModernCard';
 
 import { getCardRating, addRating } from '../lib/supabaseClient';
 import { Star } from 'lucide-react';
@@ -121,7 +123,9 @@ const ViewCard = () => {
             case 'conference-gradient': return <ConferenceGradientCard {...props} />;
             case 'minimalist': return <MinimalistCard {...props} />;
             case 'glassmorphism': return <GlassmorphismCard {...props} />;
-            case 'red-geometric': return <RedGeometricCard {...props} />; // Added RedGeometricCard
+            case 'red-geometric': return <RedGeometricCard {...props} />;
+            case 'professional-dev': return <ProfessionalDevCard {...props} />;
+            case 'circular-modern': return <CircularModernCard {...props} />;
             case 'modern': default: return <ModernCard {...props} />;
         }
     };

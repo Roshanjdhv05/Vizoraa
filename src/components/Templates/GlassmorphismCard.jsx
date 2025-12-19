@@ -64,6 +64,13 @@ const GlassmorphismCard = ({ card, isSaved, isLiked, userRating, handleLike, han
                     </div>
                 )}
 
+                {/* About Section */}
+                {card.about && (
+                    <div className="mb-6 text-center w-full">
+                        <p className="text-white/90 text-sm font-light italic break-words whitespace-pre-wrap">"{card.about}"</p>
+                    </div>
+                )}
+
                 <div className="w-full space-y-3 mb-6">
                     {card.phone && (
                         <a href={`tel:${card.phone} `} className="flex items-center gap-3 bg-white/10 p-3 rounded-xl hover:bg-white/20 transition-colors">
@@ -77,6 +84,7 @@ const GlassmorphismCard = ({ card, isSaved, isLiked, userRating, handleLike, han
                             <span className="text-sm truncate">{card.email}</span>
                         </a>
                     )}
+
                     {(card.location || card.google_map_link) && (
                         <a
                             href={card.google_map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location || '')}`}
@@ -91,6 +99,11 @@ const GlassmorphismCard = ({ card, isSaved, isLiked, userRating, handleLike, han
                 </div >
 
                 <div className="flex gap-4 mt-auto mb-6">
+                    {card.website && (
+                        <a href={card.website} target="_blank" className="p-2 bg-white/10 rounded-full hover:bg-white hover:text-indigo-600 transition-all">
+                            <Globe className="w-5 h-5" />
+                        </a>
+                    )}
                     {card.social_links && Object.entries(card.social_links).map(([platform, url]) => (
                         <a key={platform} href={url} target="_blank" className="p-2 bg-white/10 rounded-full hover:bg-white hover:text-indigo-600 transition-all">
                             <SocialIcon platform={platform} />

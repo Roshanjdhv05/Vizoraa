@@ -132,6 +132,15 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                         </div>
                                     </div>
                                 )}
+
+                                {/* About Section */}
+                                {card.about && (
+                                    <div className="mb-4 w-full">
+                                        <p className="text-xs md:text-sm text-slate-600 leading-relaxed border-l-2 pl-3 break-words whitespace-pre-wrap" style={{ borderColor: themeColor }}>
+                                            {card.about}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2 md:space-y-3">
@@ -152,14 +161,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
                                         <a href={`mailto:${card.email}`} className="text-xs md:text-sm text-slate-600 font-medium break-all hover:underline">{card.email}</a>
                                     </div>
                                 )}
-                                {card.website && (
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 bg-slate-50" style={{ color: themeColor }}>
-                                            <Globe className="w-3 h-3" />
-                                        </div>
-                                        <a href={card.website} target="_blank" rel="noopener noreferrer" className="text-xs md:text-sm text-slate-600 font-medium truncate hover:underline">{card.website.replace(/^https?:\/\//, '')}</a>
-                                    </div>
-                                )}
+
 
                                 {(card.location || card.google_map_link) && (
                                     <a
@@ -180,6 +182,20 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
 
                             {/* Socials Row */}
                             <div className="flex flex-wrap gap-2 mt-4 md:mt-6">
+                                {card.website && (
+                                    <a
+                                        href={card.website}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-white transition-colors"
+                                        style={{ '--hover-color': themeColor }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = themeColor; e.currentTarget.style.color = 'white'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Globe className="w-5 h-5" />
+                                    </a>
+                                )}
                                 {card.social_links && Object.entries(card.social_links).map(([platform, url]) => (
                                     <a
                                         key={platform}

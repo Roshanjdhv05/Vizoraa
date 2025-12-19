@@ -60,10 +60,17 @@ const MinimalistCard = ({ card, isSaved, isLiked, userRating, handleLike, handle
                 </div>
             )}
 
+            {/* About Section */}
+            {card.about && (
+                <div className="w-full px-4 mb-6 text-center">
+                    <p className="text-slate-600 text-sm font-light leading-relaxed break-words whitespace-pre-wrap">{card.about}</p>
+                </div>
+            )}
+
             <div className="w-full space-y-4 mb-8">
                 {card.phone && <a href={`tel:${card.phone}`} className="block py-3 border-b border-gray-100 text-slate-600 hover:text-black transition-colors">{card.phone}</a>}
                 {card.email && <a href={`mailto:${card.email}`} className="block py-3 border-b border-gray-100 text-slate-600 hover:text-black transition-colors">{card.email}</a>}
-                {card.website && <a href={card.website} target="_blank" className="block py-3 border-b border-gray-100 text-slate-600 hover:text-black transition-colors">Visit Website</a>}
+
                 {(card.google_map_link || card.location) && (
                     <div className="mt-4">
                         <a
@@ -79,6 +86,11 @@ const MinimalistCard = ({ card, isSaved, isLiked, userRating, handleLike, handle
             </div>
 
             <div className="flex gap-4 mb-8">
+                {card.website && (
+                    <a href={card.website} target="_blank" className="text-slate-400 hover:text-black transition-colors">
+                        <Globe className="w-5 h-5" />
+                    </a>
+                )}
                 {card.social_links && Object.entries(card.social_links).map(([platform, url]) => (
                     <a key={platform} href={url} target="_blank" className="text-slate-400 hover:text-black transition-colors">
                         <SocialIcon platform={platform} />

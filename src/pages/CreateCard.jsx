@@ -10,7 +10,9 @@ import MinimalistCard from '../components/Templates/MinimalistCard';
 import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
 
 import RedGeometricCard from '../components/Templates/RedGeometricCard';
+import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
+import CircularModernCard from '../components/Templates/CircularModernCard';
 
 const CreateCard = () => {
     const navigate = useNavigate();
@@ -307,6 +309,16 @@ const CreateCard = () => {
     };
 
     const renderPreview = () => {
+        // Fallback UI if no template selected (though default is set)
+        if (!formData.template_id) {
+            return (
+                <div className="flex flex-col items-center justify-center h-[500px] w-full text-slate-400">
+                    <LayoutTemplate className="w-12 h-12 mb-4 opacity-50" />
+                    <p>Select a template to preview</p>
+                </div>
+            );
+        }
+
         const props = {
             card: previewCard,
             isSaved: false,
@@ -314,20 +326,37 @@ const CreateCard = () => {
             userRating: 0,
             ratingStats: { average: 0, count: 0 },
             showRating: false,
-            handleLike: (e) => e.preventDefault(),
-            handleSave: (e) => e.preventDefault(),
+            handleLike: (e) => e && e.preventDefault(),
+            handleSave: (e) => e && e.preventDefault(),
             handleRate: (val) => console.log("Rate:", val)
         };
 
-        switch (formData.template_id) {
-            case 'conference-gradient': return <ConferenceGradientCard {...props} />;
-            case 'minimalist': return <MinimalistCard {...props} />;
-            case 'glassmorphism': return <GlassmorphismCard {...props} />;
-            case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
-            case 'red-geometric': return <RedGeometricCard {...props} />;
-            case 'modern': default: return <ModernCard {...props} />;
+        // Dynamic Template Rendering with Error Boundary Concept
+        try {
+            switch (formData.template_id) {
+                case 'conference-gradient': return <ConferenceGradientCard {...props} />;
+                case 'minimalist': return <MinimalistCard {...props} />;
+                case 'glassmorphism': return <GlassmorphismCard {...props} />;
+                case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
+                case 'red-geometric': return <RedGeometricCard {...props} />;
+                case 'circular-modern': return <CircularModernCard {...props} />;
+                case 'professional-dev': return <ProfessionalDevCard {...props} />;
+                case 'modern': return <ModernCard {...props} />;
+                default:
+                    console.warn(`Template ID "${formData.template_id}" not found. Falling back to Modern.`);
+                    return <ModernCard {...props} />;
+            }
+        } catch (error) {
+            console.error("Template rendering failed:", error);
+            return (
+                <div className="flex flex-col items-center justify-center h-[500px] w-full text-red-400 bg-red-50 rounded-2xl border border-red-100">
+                    <p>Error rendering preview</p>
+                    <span className="text-xs mt-2">{error.message}</span>
+                </div>
+            );
         }
     };
+
 
     return (
         <div className="container max-w-7xl py-8 md:py-12">
@@ -362,7 +391,9 @@ const CreateCard = () => {
                                             { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
                                             { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
                                             { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
-                                            { id: 'red-geometric', name: 'Geometric', color: '#EF4444' }
+                                            { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
+                                            { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
+                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -494,6 +525,22 @@ const CreateCard = () => {
                                         <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="City, Country" />
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex justify-between">
+                                    About
+                                    <span className="text-xs text-slate-400">{formData.about?.length || 0}/150</span>
+                                </label>
+                                <textarea
+                                    name="about"
+                                    maxLength={150}
+                                    value={formData.about || ''}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    className="input-field w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none"
+                                    placeholder="Write a short bio about yourself..."
+                                />
                             </div>
 
                             {formData.template_id === 'hero-cover-profile' && (

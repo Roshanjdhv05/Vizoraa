@@ -94,6 +94,13 @@ const ConferenceGradientCard = ({ card, isSaved, isLiked, userRating, handleLike
                 </div>
             )}
 
+            {/* About Section */}
+            {card.about && (
+                <div className="px-10 mb-4 text-center w-full">
+                    <p className="text-sm text-gray-600 italic leading-relaxed break-words whitespace-pre-wrap">"{card.about}"</p>
+                </div>
+            )}
+
             {/* Contact Info */}
             <div className="px-10 py-4 flex-1 flex flex-col gap-5 z-10">
 

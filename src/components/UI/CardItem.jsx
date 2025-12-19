@@ -35,14 +35,14 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             </div>
 
                             <div className="pt-5 flex-1 min-w-0">
-                                <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-center gap-1 truncate pr-1">
+                                <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-start gap-1 line-clamp-2">
                                     {card.name}
-                                    {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0" />}
+                                    {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0 mt-0.5" />}
 
                                     {/* Premium Crown - Check profile subscription fromJoined data */}
                                     {card.profiles?.subscription_plan === 'gold' &&
                                         new Date(card.profiles?.subscription_expiry) > new Date() && (
-                                            <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+                                            <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
                                         )}
                                 </h3>
                                 <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>
@@ -64,13 +64,13 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                         </div>
 
                         <div className="pt-1 flex-1 min-w-0">
-                            <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-center gap-1 truncate pr-1">
+                            <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-start gap-1 line-clamp-2">
                                 {card.name}
-                                {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0" />}
+                                {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0 mt-0.5" />}
                                 {/* Premium Crown */}
                                 {card.profiles?.subscription_plan === 'gold' &&
                                     new Date(card.profiles?.subscription_expiry) > new Date() && (
-                                        <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+                                        <Crown className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0 mt-0.5" />
                                     )}
                             </h3>
                             <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>

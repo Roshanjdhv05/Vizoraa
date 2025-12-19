@@ -82,6 +82,14 @@ const ModernCard = ({ card, isSaved, isLiked, userRating, handleLike, handleSave
             {/* Content */}
             <div className="p-6 space-y-4">
 
+                {/* About Section */}
+                {card.about && (
+                    <div className="w-full">
+                        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">About</h2>
+                        <p className="text-slate-600 text-sm leading-relaxed break-words whitespace-pre-wrap">{card.about}</p>
+                    </div>
+                )}
+
                 {/* Rating Section */}
                 {showRating && (
                     <div className="flex flex-col items-center justify-center p-5 bg-slate-50/50 rounded-2xl border border-slate-100 mb-2">

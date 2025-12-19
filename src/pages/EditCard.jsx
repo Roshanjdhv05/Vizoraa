@@ -8,6 +8,9 @@ import ConferenceGradientCard from '../components/Templates/ConferenceGradientCa
 import MinimalistCard from '../components/Templates/MinimalistCard';
 import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
 import RedGeometricCard from '../components/Templates/RedGeometricCard';
+import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
+import CircularModernCard from '../components/Templates/CircularModernCard';
+
 
 const EditCard = () => {
     const { id } = useParams();
@@ -29,6 +32,7 @@ const EditCard = () => {
         website: '',
         location: '',
         google_map_link: '',
+        about: '',
         theme_color: '#6366f1',
         template_id: 'modern',
         social_links: {
@@ -72,6 +76,7 @@ const EditCard = () => {
                 website: data.website || '',
                 location: data.location || '',
                 google_map_link: data.google_map_link || '',
+                about: data.about || '',
                 theme_color: data.theme_color || '#6366f1',
                 template_id: data.template_id || 'modern',
                 social_links: {
@@ -235,20 +240,49 @@ const EditCard = () => {
     };
 
     const renderPreview = () => {
+        // Fallback UI if no template selected (though default is set)
+        if (!formData.template_id) {
+            return (
+                <div className="flex flex-col items-center justify-center h-[500px] w-full text-slate-400">
+                    <p>Select a template to preview</p>
+                </div>
+            );
+        }
+
         const props = {
             card: previewCard,
             isSaved: false,
             isLiked: false,
-            handleLike: (e) => e.preventDefault(),
-            handleSave: (e) => e.preventDefault()
+            userRating: 0,
+            ratingStats: { average: 0, count: 0 },
+            showRating: false,
+            handleLike: (e) => e && e.preventDefault(),
+            handleSave: (e) => e && e.preventDefault()
         };
 
-        switch (formData.template_id) {
-            case 'conference-gradient': return <ConferenceGradientCard {...props} />;
-            case 'minimalist': return <MinimalistCard {...props} />;
-            case 'glassmorphism': return <GlassmorphismCard {...props} />;
-            case 'red-geometric': return <RedGeometricCard {...props} />;
-            case 'modern': default: return <ModernCard {...props} />;
+        // Dynamic Template Rendering with Error Boundary Concept
+        try {
+            switch (formData.template_id) {
+                case 'conference-gradient': return <ConferenceGradientCard {...props} />;
+                case 'minimalist': return <MinimalistCard {...props} />;
+                case 'glassmorphism': return <GlassmorphismCard {...props} />;
+                case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
+                case 'red-geometric': return <RedGeometricCard {...props} />;
+                case 'circular-modern': return <CircularModernCard {...props} />;
+                case 'modern': return <ModernCard {...props} />;
+                case 'professional-dev': return <ProfessionalDevCard {...props} />;
+                default:
+                    console.warn(`Template ID "${formData.template_id}" not found. Falling back to Modern.`);
+                    return <ModernCard {...props} />;
+            }
+        } catch (error) {
+            console.error("Template rendering failed:", error);
+            return (
+                <div className="flex flex-col items-center justify-center h-[500px] w-full text-red-400 bg-red-50 rounded-2xl border border-red-100">
+                    <p>Error rendering preview</p>
+                    <span className="text-xs mt-2">{error.message}</span>
+                </div>
+            );
         }
     };
 
@@ -280,7 +314,9 @@ const EditCard = () => {
                                         { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
                                         { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
                                         { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
-                                        { id: 'red-geometric', name: 'Geometric', color: '#EF4444' }
+                                        { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
+                                        { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
+                                        { id: 'programmer', name: 'Dev', color: '#1e1e1e' }
                                     ].map(template => (
                                         <button
                                             key={template.id}
@@ -337,6 +373,22 @@ const EditCard = () => {
                                     <label className="text-sm font-medium text-slate-700">Location</label>
                                     <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex justify-between">
+                                    About
+                                    <span className="text-xs text-slate-400">{formData.about?.length || 0}/150</span>
+                                </label>
+                                <textarea
+                                    name="about"
+                                    maxLength={150}
+                                    value={formData.about || ''}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    className="input-field w-full p-2 border rounded-lg outline-none resize-none"
+                                    placeholder="Write a short bio about yourself..."
+                                />
                             </div>
 
                             <div className="space-y-2 mt-4">
