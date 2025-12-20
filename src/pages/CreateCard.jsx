@@ -49,6 +49,7 @@ const CreateCard = () => {
         location: '',
         google_map_link: '',
         cover_url: '',
+        category: 'Personal',
         theme_color: '#6366f1',
         template_id: 'modern',
         social_links: {
@@ -513,6 +514,25 @@ const CreateCard = () => {
                                 </div>
                             </div>
 
+                            <div className="space-y-4">
+                                <label className="text-sm font-medium text-slate-700">Card Category</label>
+                                <div className="flex flex-wrap gap-3">
+                                    {['Personal', 'Business', 'Freelancer'].map((cat) => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, category: cat })}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${formData.category === cat
+                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                                                }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Company</label>
@@ -670,8 +690,8 @@ const CreateCard = () => {
                             <div className="text-xs text-slate-400">Updates automatically</div>
                         </div>
 
-                        <div className="bg-slate-200/50 rounded-3xl p-6 md:p-10 flex items-center justify-center min-h-[600px] border border-slate-200 shadow-inner">
-                            <div className="transform scale-[0.85] md:scale-100 transition-transform duration-300 origin-center">
+                        <div className="bg-slate-200/50 rounded-3xl p-4 md:p-10 flex items-center justify-center min-h-[550px] md:min-h-[600px] border border-slate-200 shadow-inner">
+                            <div className="w-full flex justify-center md:block md:w-auto md:transform md:scale-100 transition-transform duration-300 origin-center">
                                 {renderPreview()}
                             </div>
                         </div>

@@ -1,13 +1,32 @@
 import React from 'react';
-import { Heart, Eye, Star, Bookmark, BadgeCheck, Crown } from 'lucide-react';
+import { Heart, Eye, Star, Bookmark, BadgeCheck, Crown, Flame } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import OffersBadge from './OffersBadge';
 
 const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, ratingCount, isVerified }) => {
+    const navigate = useNavigate();
     // Fallback for avatar
     const initial = card.name ? card.name[0].toUpperCase() : 'U';
 
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] hover:scale-[1.02] transition-all duration-300 relative group border border-gray-50 h-full flex flex-col">
             {/* Top Rated Tag */}
+            {/* Top Rated Tag */}
+            {/* Top Rated Tag */}
+            {card.has_active_offer && (
+                <div className="absolute top-4 right-4 z-20">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/offers?user_id=${card.user_id}`);
+                        }}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-full shadow-lg hover:shadow-orange-200 hover:scale-105 transition-all flex items-center gap-1.5 animate-pulse"
+                    >
+                        <Flame className="w-3.5 h-3.5 fill-white" />
+                        <span className="font-bold text-xs whitespace-nowrap">View Offers</span>
+                    </button>
+                </div>
+            )}
 
 
             <div className="flex flex-col flex-1">
@@ -37,7 +56,16 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             <div className="pt-5 flex-1 min-w-0">
                                 <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-start gap-1 line-clamp-2">
                                     {card.name}
+                                    {card.name}
                                     {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0 mt-0.5" />}
+
+                                    {/* Active Offer Icon - Glowing Flame - Near Name */}
+                                    {card.has_active_offer && (
+                                        <div className="relative flex items-center justify-center ml-1 mt-0.5">
+                                            <div className="absolute inset-0 bg-red-400 rounded-full blur animate-pulse opacity-50"></div>
+                                            <Flame className="w-4 h-4 text-red-500 fill-orange-500 relative z-10 animate-pulse" />
+                                        </div>
+                                    )}
 
                                     {/* Premium Crown - Check profile subscription fromJoined data */}
                                     {card.profiles?.subscription_plan === 'gold' &&
@@ -67,6 +95,13 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-start gap-1 line-clamp-2">
                                 {card.name}
                                 {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0 mt-0.5" />}
+                                {/* Active Offer Icon - Glowing Flame - Near Name */}
+                                {card.has_active_offer && (
+                                    <div className="relative flex items-center justify-center ml-1 mt-0.5">
+                                        <div className="absolute inset-0 bg-red-400 rounded-full blur animate-pulse opacity-50"></div>
+                                        <Flame className="w-4 h-4 text-red-500 fill-orange-500 relative z-10 animate-pulse" />
+                                    </div>
+                                )}
                                 {/* Premium Crown */}
                                 {card.profiles?.subscription_plan === 'gold' &&
                                     new Date(card.profiles?.subscription_expiry) > new Date() && (

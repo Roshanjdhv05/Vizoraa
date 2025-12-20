@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin } from 'lucide-react';
+import { CreditCard, Save, Loader2, Link as LinkIcon, Camera, Upload, MapPin, Star, LayoutTemplate } from 'lucide-react';
 
 import ModernCard from '../components/Templates/ModernCard';
 import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
@@ -10,6 +10,7 @@ import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
 import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
+import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 
 
 const EditCard = () => {
@@ -21,6 +22,7 @@ const EditCard = () => {
 
     const [avatarUrl, setAvatarUrl] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
+    const [unlockedTemplates, setUnlockedTemplates] = useState([]);
 
     const [formData, setFormData] = useState({
         title: 'My Business Card',
@@ -33,6 +35,7 @@ const EditCard = () => {
         location: '',
         google_map_link: '',
         about: '',
+        category: 'Personal',
         theme_color: '#6366f1',
         template_id: 'modern',
         social_links: {
@@ -56,6 +59,11 @@ const EditCard = () => {
                 return;
             }
 
+            const { data: profile } = await supabase.from('profiles').select('unlocked_templates').eq('id', user.id).single();
+            if (profile && profile.unlocked_templates) {
+                setUnlockedTemplates(profile.unlocked_templates);
+            }
+
             const { data, error } = await supabase
                 .from('cards')
                 .select('*')
@@ -76,9 +84,11 @@ const EditCard = () => {
                 website: data.website || '',
                 location: data.location || '',
                 google_map_link: data.google_map_link || '',
+                google_map_link: data.google_map_link || '',
                 about: data.about || '',
+                category: data.category || 'Personal',
                 theme_color: data.theme_color || '#6366f1',
-                template_id: data.template_id || 'modern',
+                template_id: data.template_id === 'programmer' ? 'professional-dev' : (data.template_id || 'modern'),
                 social_links: {
                     instagram: extractUsername(data.social_links?.instagram),
                     linkedin: extractUsername(data.social_links?.linkedin),
@@ -305,34 +315,90 @@ const EditCard = () => {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
 
-                            {/* Template Selection moved to top */}
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-slate-800">Choose Template</h3>
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {[
-                                        { id: 'modern', name: 'Modern', color: '#6366f1' },
-                                        { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
-                                        { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
-                                        { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
-                                        { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
-                                        { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
-                                        { id: 'programmer', name: 'Dev', color: '#1e1e1e' }
-                                    ].map(template => (
-                                        <button
-                                            key={template.id}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, template_id: template.id })}
-                                            className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${formData.template_id === template.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-indigo-200'}`}
-                                        >
-                                            <div
-                                                className={`w-full h-12 rounded-lg shadow-sm ${template.border ? 'border border-gray-200' : ''}`}
-                                                style={{ background: template.color }}
-                                            ></div>
-                                            <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-indigo-700' : 'text-slate-500'}`}>
-                                                {template.name}
-                                            </span>
-                                        </button>
-                                    ))}
+                            {/* Template Selection */}
+                            <div className="space-y-6">
+                                {/* Standard Templates */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        Standard Templates
+                                        <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Free</span>
+                                    </h3>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {[
+                                            { id: 'modern', name: 'Modern', color: '#6366f1' },
+                                            { id: 'conference-gradient', name: 'Conference', color: '#EEDBFF' },
+                                            { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
+                                            { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
+                                            { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
+                                            { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
+                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
+                                        ].map(template => (
+                                            <button
+                                                key={template.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, template_id: template.id })}
+                                                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${formData.template_id === template.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-indigo-200'}`}
+                                            >
+                                                <div
+                                                    className={`w-full h-12 rounded-lg shadow-sm ${template.border ? 'border border-gray-200' : ''}`}
+                                                    style={{ background: template.color }}
+                                                ></div>
+                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-indigo-700' : 'text-slate-500'}`}>
+                                                    {template.name}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Premium Templates */}
+                                <div className="space-y-3">
+                                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                                        Premium Templates
+                                        <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                                            <Star className="w-3 h-3 fill-current" /> Pro
+                                        </span>
+                                    </h3>
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        {[
+                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' }
+                                        ].map(template => (
+                                            <button
+                                                key={template.id}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, template_id: template.id })}
+                                                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 overflow-hidden ${formData.template_id === template.id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-amber-200'}`}
+                                            >
+                                                {unlockedTemplates?.includes(template.id) ? (
+                                                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10 flex items-center gap-1">
+                                                        <LayoutTemplate className="w-2 h-2" /> UNLOCKED
+                                                    </div>
+                                                ) : (
+                                                    <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">PRO</div>
+                                                )}
+
+                                                <div
+                                                    className={`w-full h-12 rounded-lg shadow-sm relative overflow-hidden`}
+                                                    style={{ background: template.color }}
+                                                >
+                                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-transparent"></div>
+                                                </div>
+                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-amber-700' : 'text-slate-500'}`}>
+                                                    {template.name}
+                                                </span>
+
+                                                {unlockedTemplates?.includes(template.id) ? (
+                                                    <span className="text-[10px] font-bold text-green-700 bg-green-50 px-1.5 rounded border border-green-200">
+                                                        Owned
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-900 bg-white px-1.5 rounded border border-slate-200">
+                                                        Locked
+                                                    </span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -372,6 +438,25 @@ const EditCard = () => {
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">Location</label>
                                     <input type="text" name="location" value={formData.location} onChange={handleChange} className="input-field w-full p-2 border rounded-lg" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-sm font-medium text-slate-700">Card Category</label>
+                                <div className="flex flex-wrap gap-3">
+                                    {['Personal', 'Business', 'Freelancer'].map((cat) => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, category: cat })}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${formData.category === cat
+                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                                                }`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -498,8 +583,8 @@ const EditCard = () => {
                             <div className="text-xs text-slate-400">Updates automatically</div>
                         </div>
 
-                        <div className="bg-slate-200/50 rounded-3xl p-6 md:p-10 flex items-center justify-center min-h-[600px] border border-slate-200 shadow-inner">
-                            <div className="transform scale-[0.85] md:scale-100 transition-transform duration-300 origin-center">
+                        <div className="bg-slate-200/50 rounded-3xl p-4 md:p-10 flex items-center justify-center min-h-[550px] md:min-h-[600px] border border-slate-200 shadow-inner">
+                            <div className="w-full flex justify-center md:block md:w-auto md:transform md:scale-100 transition-transform duration-300 origin-center">
                                 {renderPreview()}
                             </div>
                         </div>

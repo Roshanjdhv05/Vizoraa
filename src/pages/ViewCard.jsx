@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-import { Loader2, QrCode } from 'lucide-react'; // Added QrCode icon
+import { Loader2, QrCode, Flame } from 'lucide-react'; // Added QrCode icon
 import ModernCard from '../components/Templates/ModernCard';
 import ConferenceGradientCard from '../components/Templates/ConferenceGradientCard';
 import MinimalistCard from '../components/Templates/MinimalistCard';
@@ -60,7 +60,16 @@ const ViewCard = () => {
                 .single();
 
             if (error) throw error;
-            setCard(data);
+
+            // Check for active offers for this user
+            const { data: offers } = await supabase
+                .from('offers')
+                .select('id')
+                .eq('user_id', data.user_id)
+                .eq('show_on_card', true)
+                .limit(1);
+
+            setCard({ ...data, has_offers: offers && offers.length > 0 });
 
             await supabase.from('cards').update({ view_count: (data.view_count || 0) + 1 }).eq('id', id);
 
@@ -141,6 +150,17 @@ const ViewCard = () => {
                 <QrCode className="w-5 h-5" />
                 <span className="font-bold text-sm pr-1">QR Code</span>
             </button>
+
+            {/* View Offers Button (if active offers exist) */}
+            {card.has_offers && (
+                <button
+                    onClick={() => navigate(`/offers?user_id=${card.user_id}`)}
+                    className="fixed bottom-6 left-6 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform animate-pulse flex items-center gap-2 ring-4 ring-orange-200"
+                >
+                    <Flame className="w-5 h-5 fill-white" />
+                    <span className="font-bold text-sm pr-1">View Offers</span>
+                </button>
+            )}
 
             {renderTemplate()}
 

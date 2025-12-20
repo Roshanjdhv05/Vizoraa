@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { ChevronDown, Search, X } from 'lucide-react';
 
 const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = [], allStates = [], allCountries = [] }) => {
@@ -52,8 +53,8 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
         <button
             onClick={onClick}
             className={`px-4 py-2.5 rounded-[14px] text-sm font-medium border transition-all duration-200 active:scale-95 ${selected
-                    ? 'bg-[#FFE5DF] text-[#E86A4F] border-[#FFB7A8] shadow-sm'
-                    : 'bg-white text-[#1C1C1C] border-[#E3E3E3] hover:border-gray-300'
+                ? 'bg-[#FFE5DF] text-[#E86A4F] border-[#FFB7A8] shadow-sm'
+                : 'bg-white text-[#1C1C1C] border-[#E3E3E3] hover:border-gray-300'
                 }`}
         >
             {label}
@@ -64,8 +65,8 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
         <button
             onClick={onClick}
             className={`w-full py-3 rounded-xl text-sm font-medium border transition-all duration-200 active:scale-95 flex items-center justify-center ${selected
-                    ? 'bg-[#7B4BFF] text-white border-[#7B4BFF] shadow-md shadow-purple-200'
-                    : 'bg-white text-slate-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                ? 'bg-[#7B4BFF] text-white border-[#7B4BFF] shadow-md shadow-purple-200'
+                : 'bg-white text-slate-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
         >
             {label}
@@ -93,8 +94,8 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
         );
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 z-[9999] flex flex-col justify-end">
             {/* Backdrop */}
             <div
                 className={`absolute inset-0 bg-black/50 transition-opacity duration-300 ${animate ? 'opacity-100' : 'opacity-0'}`}
@@ -103,7 +104,7 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
 
             {/* Sheet */}
             <div
-                className={`relative bg-[#FFFFFF] w-full rounded-t-[30px] shadow-2xl flex flex-col max-h-[92vh] transition-transform duration-300 ease-out transform ${animate ? 'translate-y-0' : 'translate-y-full'}`}
+                className={`relative bg-[#FFFFFF] w-full rounded-t-[30px] shadow-2xl flex flex-col h-[85vh] transition-transform duration-300 ease-out transform ${animate ? 'translate-y-0' : 'translate-y-full'}`}
             >
                 {/* Drag Indicator */}
                 <div className="w-full flex justify-center pt-3 pb-2" onClick={onClose}>
@@ -202,8 +203,8 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
                     </div>
                 </div>
 
-                {/* Footer Buttons (Sticky) */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 flex gap-3 rounded-t-[20px] shadow-[0_-5px_30px_rgba(0,0,0,0.03)] pb-8 safe-area-bottom">
+                {/* Footer Buttons (Absolute Bottom) */}
+                <div className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-100 flex gap-3 rounded-t-[20px] shadow-[0_-5px_30px_rgba(0,0,0,0.03)] pb-8 safe-area-bottom z-10">
                     <button
                         onClick={onClose}
                         className="flex-1 py-3 rounded-[12px] bg-white border border-gray-200 text-slate-600 font-semibold text-base hover:bg-gray-50 active:scale-[0.98] transition-all"
@@ -218,7 +219,8 @@ const MobileFilterSheet = ({ isOpen, onClose, filters, onApply, occupations = []
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -27,7 +27,7 @@ const ProfessionalDevCard = ({ card, isSaved, isLiked, userRating, handleLike, h
 
     return (
         <div
-            className="group w-full md:w-[350px] h-[600px] cursor-pointer mx-auto"
+            className="group w-[90%] max-w-[320px] md:max-w-none md:w-[350px] h-[520px] md:h-[600px] cursor-pointer mx-auto"
             onClick={handleFlip}
             style={{ perspective: '1000px' }}
         >
@@ -35,6 +35,7 @@ const ProfessionalDevCard = ({ card, isSaved, isLiked, userRating, handleLike, h
                 className={`relative w-full h-full transition-all duration-700`}
                 style={{
                     transformStyle: 'preserve-3d',
+                    WebkitTransformStyle: 'preserve-3d',
                     transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
                 }}
             >

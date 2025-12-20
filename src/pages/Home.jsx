@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Loader2, ArrowLeft, Star, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Star, X, Flame } from 'lucide-react';
 import { addRating } from '../lib/supabaseClient';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -30,6 +30,7 @@ const Home = () => {
     const [filters, setFilters] = useState({
         search: '',
         occupation: [], // Array
+        category: 'All', // 'All', 'Personal', 'Business', 'Freelancer'
         area: '',
         state: [], // Array
         country: [], // Array
@@ -54,9 +55,9 @@ const Home = () => {
     }, []);
 
     useEffect(() => {
-        // Trigger fetch on Sort change immediately
+        // Trigger fetch on Sort or Category change immediately
         fetchCards();
-    }, [filters.sort]);
+    }, [filters.sort, filters.category]);
 
     const fetchOccupations = async () => {
         const { data } = await supabase.from('cards').select('profession');
@@ -100,6 +101,11 @@ const Home = () => {
                 query = query.or(orClause);
             }
 
+            // 2.5 Category Filter
+            if (filters.category && filters.category !== 'All') {
+                query = query.eq('category', filters.category);
+            }
+
             // 3. Area
             if (filters.area) {
                 query = query.ilike('location', `%${filters.area}%`);
@@ -138,6 +144,23 @@ const Home = () => {
                 if (!isAGold && isBGold) return 1;  // B comes first
                 return 0; // Maintain original sort (created_at or views)
             });
+
+            // --- OFFERS INTEGRATION ---
+            // Fetch all offers that are marked to show on home
+            // We can do this in parallel or after.
+            const { data: offersData } = await supabase
+                .from('offers')
+                .select('user_id')
+                .eq('show_on_home', true);
+
+            // Create a set of user IDs with active offers
+            const userIdsWithOffers = new Set(offersData?.map(o => o.user_id));
+
+            // Mark cards with has_active_offer
+            sortedCards = sortedCards.map(card => ({
+                ...card,
+                has_active_offer: userIdsWithOffers.has(card.user_id)
+            }));
 
             // Fetch Ratings
             let finalCards = cardsData || [];
@@ -338,16 +361,17 @@ const Home = () => {
                 // Desktop: Viewport-Aware Positioning (Fixed coordinates)
                 const cardRect = element.getBoundingClientRect();
                 const viewportHeight = window.innerHeight;
-                const viewportWidth = window.innerWidth;
+                // Use clientWidth to exclude scrollbar width
+                const viewportWidth = document.documentElement.clientWidth;
 
                 const POPUP_HEIGHT_ESTIMATE = 650;
-                const POPUP_WIDTH = Math.min(600, viewportWidth - 32);
+                const POPUP_WIDTH = Math.min(600, viewportWidth - 100); // Ensure popup itself isn't too wide
 
                 // 1. Calculate Horizontal Position (Centered on Card, but Clamped)
                 let leftPx = cardRect.left + (cardRect.width / 2) - (POPUP_WIDTH / 2);
 
-                // Clamp horizontal to viewport edges (16px padding)
-                leftPx = Math.max(16, Math.min(leftPx, viewportWidth - POPUP_WIDTH - 16));
+                // Clamp horizontal to viewport edges (16px left, 80px right)
+                leftPx = Math.max(16, Math.min(leftPx, viewportWidth - POPUP_WIDTH - 80));
 
                 // 2. Decide Vertical Placement (Top vs Bottom)
                 const spaceBelow = viewportHeight - cardRect.bottom;
@@ -422,7 +446,20 @@ const Home = () => {
                 >
                     <X className="w-6 h-6 text-slate-500" />
                 </button>
-                <div className="w-full max-w-xl">
+                <div className="w-full max-w-xl relative">
+                    {/* View Offers Overlay Button */}
+                    {expandedCardData.has_active_offer && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/offers?user_id=${expandedCardData.user_id}`);
+                            }}
+                            className="absolute bottom-4 left-4 z-50 bg-gradient-to-r from-orange-500 to-red-600 text-white px-4 py-2 rounded-full shadow-lg hover:scale-105 transition-transform animate-pulse flex items-center gap-2 ring-2 ring-orange-200"
+                        >
+                            <Flame className="w-4 h-4 fill-white" />
+                            <span className="font-bold text-xs">View Offers</span>
+                        </button>
+                    )}
                     <CardComponent {...props} />
                 </div>
             </div>
@@ -435,10 +472,26 @@ const Home = () => {
             <div className="mb-10 text-center xl:text-left">
                 <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">Discover Amazing Digital Cards</h1>
                 <p className="text-[#94a3b8] text-lg">Connect with professionals worldwide</p>
+
+                {/* Category Tabs */}
+                <div className="flex flex-wrap gap-2 mt-6 justify-center xl:justify-start">
+                    {['All', 'Personal', 'Business', 'Freelancer'].map((cat) => (
+                        <button
+                            key={cat}
+                            onClick={() => setFilters({ ...filters, category: cat })}
+                            className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${filters.category === cat
+                                ? 'bg-slate-900 text-white shadow-lg transform scale-105'
+                                : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400 hover:text-slate-700'
+                                }`}
+                        >
+                            {cat} Cards
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Advanced Filters */}
-            <div className="mb-12 sticky top-4 z-40">
+            <div className="mb-12 sticky top-24 md:top-4 z-40">
                 <AdvancedSearchFilter
                     filters={filters}
                     setFilters={setFilters}
@@ -575,8 +628,8 @@ const Home = () => {
             {/* Desktop Modal/Popup Overlay */}
             {expandedCardData && (
                 <>
-                    {/* Transparent Fixed Backdrop */}
-                    <div className="hidden md:block fixed inset-0 z-40 bg-transparent" onClick={handleCollapse}></div>
+                    {/* Blurred Fixed Backdrop */}
+                    <div className="hidden md:block fixed inset-0 z-40 bg-white/10 backdrop-blur-md transition-all duration-500" onClick={handleCollapse}></div>
 
                     {/* Fixed Popup Content */}
                     <div
@@ -636,7 +689,20 @@ const Home = () => {
                                 }
 
                                 return (
-                                    <div className="w-full flex justify-center">
+                                    <div className="w-full flex justify-center relative">
+                                        {/* View Offers Overlay Button */}
+                                        {expandedCardData.has_active_offer && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/offers?user_id=${expandedCardData.user_id}`);
+                                                }}
+                                                className="absolute bottom-6 left-6 z-[60] bg-gradient-to-r from-orange-500 to-red-600 text-white px-5 py-3 rounded-full shadow-2xl hover:scale-110 transition-transform animate-pulse flex items-center gap-2 ring-4 ring-orange-200"
+                                            >
+                                                <Flame className="w-5 h-5 fill-white" />
+                                                <span className="font-bold text-sm">View Offers</span>
+                                            </button>
+                                        )}
                                         <CardComponent {...props} />
                                     </div>
                                 );
