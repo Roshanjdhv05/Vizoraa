@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Clock, ExternalLink } from 'lucide-react';
+import { Heart, Clock, ExternalLink, X, ZoomIn } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ const OfferCard = ({ offer, currentUserId }) => {
     const [isLiked, setIsLiked] = useState(offer.is_liked_by_user);
     const [likeCount, setLikeCount] = useState(offer.like_count || 0);
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [showImageModal, setShowImageModal] = useState(false);
 
     const handleLike = async (e) => {
         e.stopPropagation();
@@ -94,16 +95,28 @@ const OfferCard = ({ offer, currentUserId }) => {
                 <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-indigo-400 transition-colors" />
             </div>
 
+
             {/* Offer Image */}
-            <div className="relative aspect-video bg-slate-50 overflow-hidden">
-                {!imageLoaded && <div className="absolute inset-0 animate-pulse bg-slate-200" />}
-                <img
-                    src={offer.image_url}
-                    alt={offer.title}
-                    className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    onLoad={() => setImageLoaded(true)}
-                />
-            </div>
+            {offer.image_url && (
+                <div
+                    className="relative aspect-video bg-slate-50 overflow-hidden group/image cursor-zoom-in"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowImageModal(true);
+                    }}
+                >
+                    {!imageLoaded && <div className="absolute inset-0 animate-pulse bg-slate-200" />}
+                    <img
+                        src={offer.image_url}
+                        alt={offer.title}
+                        className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        onLoad={() => setImageLoaded(true)}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover/image:opacity-100">
+                        <ZoomIn className="w-8 h-8 text-white drop-shadow-lg" />
+                    </div>
+                </div>
+            )}
 
             {/* Content */}
             <div className="p-5">
@@ -130,6 +143,30 @@ const OfferCard = ({ offer, currentUserId }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Image Modal Lightbox */}
+            {showImageModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setShowImageModal(false);
+                    }}
+                >
+                    <button
+                        className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                        onClick={() => setShowImageModal(false)}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <img
+                        src={offer.image_url}
+                        alt={offer.title}
+                        className="max-w-full max-h-[90vh] rounded-lg shadow-2xl animate-scale-up object-contain"
+                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking image itself
+                    />
+                </div>
+            )}
         </div>
     );
 };

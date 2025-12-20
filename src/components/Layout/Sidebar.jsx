@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X, Crown, Flame } from 'lucide-react';
+import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X, Crown, Flame, Shield } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 const Sidebar = ({ session, isOpen, onClose }) => {
@@ -65,6 +65,7 @@ const Sidebar = ({ session, isOpen, onClose }) => {
                 <div className="flex-1 px-6 flex flex-col gap-2 overflow-y-auto py-4 custom-scrollbar">
                     <NavItem to="/" icon={Compass} label="Browse Cards" />
                     <NavItem to="/offers" icon={Flame} label="Offers" />
+                    <NavItem to="/privacy-policy" icon={Shield} label="Privacy Policy" />
                     {session && (
                         <>
                             <NavItem to="/dashboard" icon={LayoutGrid} label="Dashboard" />

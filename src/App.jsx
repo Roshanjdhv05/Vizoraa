@@ -15,6 +15,7 @@ import EditCard from './pages/EditCard';
 import SavedCards from './pages/SavedCards';
 import Premium from './pages/Premium';
 import Offers from './pages/Offers';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Admin Components
 import AdminLayout from './components/Admin/AdminLayout';
@@ -96,6 +97,7 @@ function App() {
               element={session ? <EditCard /> : <Navigate to="/login" />}
             />
             <Route path="/offers" element={<Offers />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/c/:id" element={<ViewCard />} />
           </Route>
         </Routes>

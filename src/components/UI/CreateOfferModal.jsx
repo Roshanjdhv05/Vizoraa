@@ -37,7 +37,8 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!imageFile) return alert('Please upload an image for your offer');
+        // Image is now optional
+
 
         setLoading(true);
         try {
@@ -47,7 +48,7 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
                 user_id: userId,
                 title: formData.title,
                 description: formData.description,
-                image_url: imageUrl,
+                image_url: imageUrl || '',
                 show_on_card: formData.show_on_card,
                 show_on_home: formData.show_on_home
             });
@@ -78,7 +79,7 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     {/* Image Upload */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-700">Offer Image (Required)</label>
+                        <label className="block text-sm font-medium text-slate-700">Offer Image (Optional)</label>
                         <div
                             className={`relative aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-colors cursor-pointer overflow-hidden ${imagePreview ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50'
                                 }`}
