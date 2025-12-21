@@ -131,53 +131,89 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
                 )}
             </div>
 
-            {/* Social Links */}
-            {/* Social Links including Website */}
-            {(card.social_links || card.website) && (
-                <div className="flex justify-center flex-wrap gap-4 px-8 mb-8">
-                    {/* Website Icon */}
-                    {card.website && (
-                        <a
-                            href={card.website}
-                            target="_blank"
-                            className="text-slate-400 transition-colors"
-                            style={{ ':hover': { color: themeColor } }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
-                            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
-                            title="Website"
-                        >
-                            <SocialIcon platform="website" />
-                        </a>
-                    )}
+            {/* Social Links including Website & Location */}
+            <div className="flex justify-center flex-wrap gap-5 px-6 mb-8">
+                {/* Website Icon */}
+                {card.website && (
+                    <a
+                        href={card.website}
+                        target="_blank"
+                        className="transition-transform hover:scale-110"
+                        title="Website"
+                    >
+                        <div className="bg-slate-100 p-3 rounded-full text-slate-700 hover:bg-slate-200 shadow-sm">
+                            <Globe className="w-6 h-6" />
+                        </div>
+                    </a>
+                )}
 
-                    {/* Other Socials */}
-                    {card.social_links && Object.entries(card.social_links).map(([platform, url]) => (
+                {/* Socials */}
+                {card.social_links && Object.entries(card.social_links).map(([platform, url]) => {
+                    if (!url) return null;
+                    let icon = <Globe className="w-6 h-6" />;
+                    let bgClass = "bg-slate-100 text-slate-700";
+
+                    switch (platform.toLowerCase()) {
+                        case 'instagram':
+                            icon = <Instagram className="w-6 h-6" />;
+                            bgClass = "bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-500 text-white";
+                            break;
+                        case 'facebook':
+                            icon = <Facebook className="w-6 h-6" />;
+                            bgClass = "bg-[#1877F2] text-white";
+                            break;
+                        case 'linkedin':
+                            icon = <Linkedin className="w-6 h-6" />;
+                            bgClass = "bg-[#0A66C2] text-white";
+                            break;
+                        case 'twitter':
+                            icon = <Twitter className="w-6 h-6" />;
+                            bgClass = "bg-black text-white"; // X branding
+                            break;
+                        case 'youtube':
+                            icon = <Youtube className="w-6 h-6" />;
+                            bgClass = "bg-[#FF0000] text-white";
+                            break;
+                        default:
+                            break;
+                    }
+
+                    return (
                         <a
                             key={platform}
                             href={url}
                             target="_blank"
-                            className="text-slate-400 transition-colors"
-                            onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
-                            onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                            className="transition-transform hover:scale-110 shadow-sm rounded-full"
                         >
-                            <SocialIcon platform={platform} />
+                            <div className={`p-3 rounded-full ${bgClass} shadow-md`}>
+                                {icon}
+                            </div>
                         </a>
-                    ))}
-                </div>
-            )}
+                    );
+                })}
 
-            {(card.location || card.google_map_link) && (
-                <div className="flex justify-center mb-6">
+                {/* Map / Location Icon */}
+                {(card.location || card.google_map_link) && (
                     <a
                         href={card.google_map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location || '')}`}
                         target="_blank"
-                        className="flex items-center gap-1 text-xs text-slate-400"
-                        onMouseEnter={(e) => e.currentTarget.style.color = themeColor}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                        className="transition-transform hover:scale-110"
+                        title={card.location || "View Location"}
                     >
-                        <MapPin className="w-3 h-3" />
-                        {card.location || "View Location"}
+                        <div className="bg-green-500 p-3 rounded-full text-white shadow-md hover:bg-green-600">
+                            <MapPin className="w-6 h-6" />
+                        </div>
                     </a>
+                )}
+            </div>
+
+            {/* Location Address Text (Restored) */}
+            {card.location && (
+                <div className="flex justify-center mb-6 -mt-4 px-6">
+                    <p className="text-slate-500 text-sm font-medium text-center flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {card.location}
+                    </p>
                 </div>
             )}
 

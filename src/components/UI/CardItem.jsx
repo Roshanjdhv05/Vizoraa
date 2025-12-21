@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Eye, Star, Bookmark, BadgeCheck, Crown, Flame } from 'lucide-react';
+import { Heart, Eye, Star, Bookmark, BadgeCheck, Crown, Flame, Globe, Instagram, Facebook, Linkedin, Twitter, Youtube } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import OffersBadge from './OffersBadge';
 
@@ -56,7 +56,6 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             <div className="pt-5 flex-1 min-w-0">
                                 <h3 className="font-bold text-lg text-slate-800 leading-tight mb-1 flex items-start gap-1 line-clamp-2">
                                     {card.name}
-                                    {card.name}
                                     {isVerified && <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500 text-white shrink-0 mt-0.5" />}
 
                                     {/* Active Offer Icon - Glowing Flame - Near Name */}
@@ -74,7 +73,7 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                                         )}
                                 </h3>
                                 <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>
-                                <p className="text-slate-400 text-xs font-medium truncate">{card.company || 'Freelance'}</p>
+                                <p className="text-slate-400 text-xs font-medium truncate">{card.company || card.category || 'Freelance'}</p>
                             </div>
                         </div>
                     </div>
@@ -109,7 +108,7 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                                     )}
                             </h3>
                             <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>
-                            <p className="text-slate-400 text-xs font-medium truncate">{card.company || 'Freelance'}</p>
+                            <p className="text-slate-400 text-xs font-medium truncate">{card.company || card.category || 'Freelance'}</p>
                         </div>
                     </div>
                 )}
@@ -117,6 +116,48 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                 {/* Description/Bio preview - Optional but improves space usage if requested, skipping for now based on strict 'stats row' request */}
 
                 {/* Stats Row */}
+                {/* Social Icons Row */}
+                <div className="flex items-center gap-3 mb-3 px-1 overflow-hidden">
+                    {card.website && (
+                        <a href={card.website} target="_blank" onClick={(e) => e.stopPropagation()} className="text-indigo-500 hover:scale-110 transition-transform bg-indigo-50 p-1.5 rounded-full">
+                            <Globe className="w-4 h-4" />
+                        </a>
+                    )}
+                    {card.social_links && Object.entries(card.social_links).map(([platform, url]) => {
+                        if (!url) return null;
+                        let Icon = Globe;
+                        let colorClass = "text-indigo-500 bg-indigo-50";
+
+                        switch (platform.toLowerCase()) {
+                            case 'instagram':
+                                Icon = Instagram;
+                                colorClass = "text-pink-600 bg-pink-50";
+                                break;
+                            case 'facebook':
+                                Icon = Facebook;
+                                colorClass = "text-blue-600 bg-blue-50";
+                                break;
+                            case 'linkedin':
+                                Icon = Linkedin;
+                                colorClass = "text-blue-700 bg-blue-50";
+                                break;
+                            case 'twitter':
+                                Icon = Twitter;
+                                colorClass = "text-slate-800 bg-slate-100";
+                                break;
+                            case 'youtube':
+                                Icon = Youtube;
+                                colorClass = "text-red-600 bg-red-50";
+                                break;
+                        }
+                        return (
+                            <a key={platform} href={url} target="_blank" onClick={(e) => e.stopPropagation()} className={`${colorClass} p-1.5 rounded-full hover:scale-110 transition-transform`}>
+                                <Icon className="w-4 h-4" />
+                            </a>
+                        );
+                    })}
+                </div>
+
                 {/* Stats Row */}
                 <div className="flex items-center gap-2 mb-4 flex-wrap mt-auto">
                     <button
