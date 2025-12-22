@@ -33,6 +33,9 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
+            const redirectUrl = `${window.location.origin}/dashboard`;
+            console.log('Attempting Google Login with redirect:', redirectUrl);
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -40,11 +43,12 @@ const Login = () => {
                         access_type: 'offline',
                         prompt: 'consent',
                     },
-                    redirectTo: `${window.location.origin}/dashboard`,
+                    redirectTo: redirectUrl,
                 }
             });
             if (error) throw error;
         } catch (err) {
+            console.error('Google Login Error:', err);
             setError(err.message);
         }
     };
