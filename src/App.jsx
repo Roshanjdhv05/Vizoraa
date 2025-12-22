@@ -28,12 +28,16 @@ import AdminAds from './pages/admin/AdminAds';
 import AdminPremium from './pages/admin/AdminPremium';
 import { Outlet } from 'react-router-dom';
 
+import { Loader2 } from 'lucide-react';
+
 function App() {
   const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      setLoading(false);
     });
 
     const {
@@ -44,6 +48,14 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <Router>
