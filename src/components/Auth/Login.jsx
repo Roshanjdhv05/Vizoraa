@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import AuthLayout from './AuthLayout';
 import { Mail, Loader2 } from 'lucide-react';
 
 const Login = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const from = location.state?.from?.pathname || '/';
+                navigate(from, { replace: true });
+            }
+        };
+        checkSession();
+    }, [navigate, location]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,7 +35,9 @@ const Login = () => {
             });
 
             if (error) throw error;
-            navigate('/dashboard');
+
+            const from = location.state?.from?.pathname || '/';
+            navigate(from, { replace: true });
         } catch (err) {
             setError(err.message);
         } finally {
@@ -33,7 +47,8 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            const redirectUrl = `${window.location.origin}/dashboard`;
+            const from = location.state?.from?.pathname || '/';
+            const redirectUrl = `${window.location.origin}${from}`;
             console.log('Attempting Google Login with redirect:', redirectUrl);
 
             const { error } = await supabase.auth.signInWithOAuth({

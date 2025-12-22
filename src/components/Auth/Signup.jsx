@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabaseClient';
 import AuthLayout from './AuthLayout';
 import { Mail, User, Loader2 } from 'lucide-react';
 
 const Signup = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -13,6 +14,17 @@ const Signup = () => {
         password: ''
     });
     const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const from = location.state?.from?.pathname || '/';
+                navigate(from, { replace: true });
+            }
+        };
+        checkSession();
+    }, [navigate, location]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -38,7 +50,8 @@ const Signup = () => {
 
             // Auto login or redirect to dashboard (Supabase usually auto logs in)
             if (data.session) {
-                navigate('/dashboard');
+                const from = location.state?.from?.pathname || '/';
+                navigate(from, { replace: true });
             } else {
                 // If email confirmation is enabled, you might see this
                 setError('Please check your email to confirm your account.');
@@ -52,6 +65,9 @@ const Signup = () => {
 
     const handleGoogleLogin = async () => {
         try {
+            const from = location.state?.from?.pathname || '/';
+            const redirectUrl = `${window.location.origin}${from}`;
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -59,7 +75,7 @@ const Signup = () => {
                         access_type: 'offline',
                         prompt: 'consent',
                     },
-                    redirectTo: `${window.location.origin}/dashboard`,
+                    redirectTo: redirectUrl,
                 }
             });
             if (error) throw error;

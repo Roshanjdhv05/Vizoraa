@@ -94,14 +94,8 @@ function App() {
               path="/create-card"
               element={session ? <CreateCard /> : <Navigate to="/login" />}
             />
-            <Route
-              path="/login"
-              element={!session ? <Login /> : <Navigate to="/dashboard" />}
-            />
-            <Route
-              path="/signup"
-              element={!session ? <Signup /> : <Navigate to="/dashboard" />}
-            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route

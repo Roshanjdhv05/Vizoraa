@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { Loader2, QrCode, Flame } from 'lucide-react'; // Added QrCode icon
 import ModernCard from '../components/Templates/ModernCard';
@@ -8,6 +8,7 @@ import MinimalistCard from '../components/Templates/MinimalistCard';
 import GlassmorphismCard from '../components/Templates/GlassmorphismCard';
 import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
+import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
 
 import { getCardRating, addRating } from '../lib/supabaseClient';
@@ -17,6 +18,7 @@ import QRCodeModal from '../components/UI/QRCodeModal'; // Added Modal
 const ViewCard = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const [card, setCard] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -86,7 +88,7 @@ const ViewCard = () => {
     };
 
     const handleSave = async () => {
-        if (!user) return navigate('/login');
+        if (!user) return navigate('/login', { state: { from: location } });
         if (isSaved) {
             await supabase.from('saved_cards').delete().eq('user_id', user.id).eq('card_id', id);
             setIsSaved(false);
@@ -97,7 +99,7 @@ const ViewCard = () => {
     };
 
     const handleLike = async () => {
-        if (!user) return navigate('/login');
+        if (!user) return navigate('/login', { state: { from: location } });
         if (isLiked) {
             await supabase.from('card_likes').delete().eq('user_id', user.id).eq('card_id', id);
             setIsLiked(false);
@@ -108,8 +110,9 @@ const ViewCard = () => {
     };
 
     const handleRate = async (rating) => {
-        if (!user) return navigate('/login');
+        if (!user) return navigate('/login', { state: { from: location } });
         if (userRating > 0) return;
+
 
         setUserRating(rating);
 
@@ -134,6 +137,7 @@ const ViewCard = () => {
             case 'glassmorphism': return <GlassmorphismCard {...props} />;
             case 'red-geometric': return <RedGeometricCard {...props} />;
             case 'professional-dev': return <ProfessionalDevCard {...props} />;
+            case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
             case 'circular-modern': return <CircularModernCard {...props} />;
             case 'modern': default: return <ModernCard {...props} />;
         }
