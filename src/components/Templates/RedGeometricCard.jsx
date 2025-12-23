@@ -23,7 +23,7 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
     };
 
     return (
-        <div className="relative w-[340px] md:w-[500px] mx-auto group">
+        <div className="relative w-full max-w-[340px] md:w-[500px] md:max-w-none mx-auto group">
             {/* 1. FLIP CONTAINER */}
             <div
                 className="w-full relative cursor-pointer"
@@ -243,33 +243,27 @@ const RedGeometricCard = ({ card, isSaved, isLiked, userRating, handleLike, hand
             </div>
 
             {/* 5. ACTION BUTTONS - OUTSIDE of Flip Container */}
-            <div className="absolute -right-3 top-0 bottom-0 flex flex-col justify-center gap-3 translate-x-full pointer-events-auto pl-4">
+            {/* 5. ACTION BUTTONS - Moved below the card */}
+            <div className="flex justify-center gap-4 mt-6 pointer-events-auto">
                 <button
                     onClick={(e) => { e.stopPropagation(); handleLike && handleLike(e); }}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isLiked ? 'text-white' : 'bg-white text-slate-400'}`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isLiked ? 'text-white' : 'bg-white text-slate-400'}`}
                     style={isLiked ? { backgroundColor: themeColor } : {}}
                     onMouseEnter={(e) => !isLiked && (e.currentTarget.style.color = themeColor)}
                     onMouseLeave={(e) => !isLiked && (e.currentTarget.style.color = '#94a3b8')}
                     title="Like"
                 >
-                    <Heart className={`w-5 h-5 md:w-6 md:h-6 ${isLiked ? 'fill-current' : ''}`} />
+                    <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); handleSave && handleSave(e); }}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isSaved ? 'bg-slate-800 text-white' : 'bg-white text-slate-400 hover:text-slate-800'}`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isSaved ? 'bg-slate-800 text-white' : 'bg-white text-slate-400 hover:text-slate-800'}`}
                     title="Save"
                 >
-                    <Bookmark className={`w-5 h-5 md:w-6 md:h-6 ${isSaved ? 'fill-current' : ''}`} />
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); /* Share logic */ }}
-                    className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center shadow-lg text-slate-400 hover:text-blue-500 transition-all active:scale-95"
-                    title="Share"
-                >
-                    <Share2 className="w-5 h-5 md:w-6 md:h-6" />
+                    <Bookmark className={`w-6 h-6 ${isSaved ? 'fill-current' : ''}`} />
                 </button>
             </div>
-        </div >
+        </div>
     );
 };
 
