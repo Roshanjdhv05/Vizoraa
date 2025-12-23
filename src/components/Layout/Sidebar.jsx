@@ -1,10 +1,12 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X, Crown, Flame, Shield } from 'lucide-react';
+import { LayoutGrid, Compass, Bookmark, PlusSquare, LogOut, CreditCard, ChevronRight, X, Crown, Flame, Shield, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
+import { usePWA } from '../../hooks/usePWA';
 
 const Sidebar = ({ session, isOpen, onClose }) => {
     const navigate = useNavigate();
+    const { isInstallable, installApp } = usePWA();
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -120,6 +122,17 @@ const Sidebar = ({ session, isOpen, onClose }) => {
                                 Get Started
                             </NavLink>
                         </div>
+                    )}
+
+                    {/* PWA Install Button */}
+                    {isInstallable && (
+                        <button
+                            onClick={installApp}
+                            className="w-full mt-3 py-3 rounded-xl bg-gradient-to-r from-[#7B4BFF] to-[#A07BFF] text-white font-bold text-sm text-center shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            Install App
+                        </button>
                     )}
                 </div>
             </aside>
