@@ -9,7 +9,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
                 <div className="p-8">
                     <div className="flex justify-center mb-6">
                         <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-indigo-600">
-                            <CreditCard className="w-8 h-8" />
+                            <img src="/logo.png" alt="Vizoraa Logo" className="w-12 h-12 object-contain" />
                             <span>Vizoraa</span>
                         </Link>
                     </div>

@@ -16,7 +16,7 @@ const Navbar = ({ session }) => {
         <nav className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-50">
             <div className="container flex items-center justify-between">
                 <Link to="/" className="flex items-center gap-2 font-bold text-xl text-indigo-600">
-                    <CreditCard className="w-6 h-6" />
+                    <img src="/logo.png" alt="Vizoraa Logo" className="w-10 h-10 object-contain" />
                     <span>Vizoraa</span>
                 </Link>
 
@@ -68,7 +68,7 @@ const Navbar = ({ session }) => {
                     <div className="fixed top-0 left-0 h-full w-[280px] bg-white z-50 shadow-xl md:hidden animate-slideIn flex flex-col">
                         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                             <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
-                                <CreditCard className="w-6 h-6" /> Vizoraa
+                                <img src="/logo.png" alt="Vizoraa Logo" className="w-10 h-10 object-contain" /> Vizoraa
                             </span>
                             <button
                                 onClick={() => setMobileMenuOpen(false)}

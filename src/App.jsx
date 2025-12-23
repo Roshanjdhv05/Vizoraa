@@ -27,6 +27,7 @@ import AdminCards from './pages/admin/AdminCards';
 import AdminAds from './pages/admin/AdminAds';
 import AdminPremium from './pages/admin/AdminPremium';
 import { Outlet } from 'react-router-dom';
+import InstallPrompt from './components/InstallPrompt';
 
 import { Loader2 } from 'lucide-react';
 
@@ -107,6 +108,8 @@ function App() {
             <Route path="/c/:id" element={<ViewCard />} />
           </Route>
         </Routes>
+
+        <InstallPrompt />
       </div>
     </Router>
   );

@@ -48,9 +48,7 @@ const Sidebar = ({ session, isOpen, onClose }) => {
                 {/* Logo Section */}
                 <div className="p-8 pb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3 text-[#7B4BFF]">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7B4BFF] to-[#A07BFF] flex items-center justify-center text-white shadow-lg shadow-purple-200">
-                            <CreditCard className="w-6 h-6" />
-                        </div>
+                        <img src="/logo.png" alt="Vizoraa Logo" className="w-14 h-14 object-contain" />
                         <span className="font-bold text-2xl tracking-tight text-slate-900">Vizoraa</span>
                     </div>
 
