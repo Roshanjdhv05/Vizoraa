@@ -309,7 +309,7 @@ const PrivacyPolicy = () => {
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-slate-900">Website</h3>
-                                    <p className="text-slate-500 text-sm">https://vizoraa.netlify.app</p>
+                                    <p className="text-slate-500 text-sm">https://vizoraaa.netlify.app</p>
                                 </div>
                             </a>
 

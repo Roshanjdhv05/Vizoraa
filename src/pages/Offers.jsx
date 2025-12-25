@@ -75,9 +75,10 @@ const Offers = () => {
 
                 // Map card info to offers
                 const enrichedOffers = offersData.map(offer => {
-                    // Try to find a card for this user. If multiple, take first.
-                    // This assumes 1 card per user effectively or just picks one to represent identity.
-                    const userCard = cardsData?.find(c => c.user_id === offer.user_id);
+                    // Try to find specific card if selected, otherwise fallback to first user card
+                    const userCard = offer.card_id
+                        ? cardsData?.find(c => c.id === offer.card_id)
+                        : cardsData?.find(c => c.user_id === offer.user_id);
 
                     // Check if current user liked this
                     const { data: { user: currentUser } } = { data: { user } } || { data: { user: null } };

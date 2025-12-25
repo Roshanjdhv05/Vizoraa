@@ -73,7 +73,20 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                                         )}
                                 </h3>
                                 <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>
-                                <p className="text-slate-400 text-xs font-medium truncate">{card.company || card.category || 'Freelance'}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="text-slate-400 text-xs font-medium truncate max-w-[140px]">{card.company || card.category || 'Freelance'}</p>
+                                    {card.has_active_offer && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/offers?user_id=${card.user_id}`);
+                                            }}
+                                            className="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full animate-pulse hover:scale-105 transition-transform"
+                                        >
+                                            OFFER
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -108,7 +121,20 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                                     )}
                             </h3>
                             <p className="text-[#7B4BFF] text-sm font-medium mb-0.5 truncate">{card.profession}</p>
-                            <p className="text-slate-400 text-xs font-medium truncate">{card.company || card.category || 'Freelance'}</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-slate-400 text-xs font-medium truncate max-w-[140px]">{card.company || card.category || 'Freelance'}</p>
+                                {card.has_active_offer && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/offers?user_id=${card.user_id}`);
+                                        }}
+                                        className="text-[10px] font-bold text-white bg-red-500 px-2 py-0.5 rounded-full animate-pulse hover:scale-105 transition-transform"
+                                    >
+                                        OFFER
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}

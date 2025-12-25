@@ -11,6 +11,7 @@ import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
+import FlipCard from '../components/Templates/FlipCard';
 
 
 const EditCard = () => {
@@ -22,6 +23,8 @@ const EditCard = () => {
 
     const [avatarUrl, setAvatarUrl] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
+    const [coverUrl, setCoverUrl] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
     const [unlockedTemplates, setUnlockedTemplates] = useState([]);
 
     const [formData, setFormData] = useState({
@@ -35,6 +38,7 @@ const EditCard = () => {
         location: '',
         google_map_link: '',
         about: '',
+        cover_url: '',
         category: 'Personal',
         theme_color: '#6366f1',
         template_id: 'modern',
@@ -86,6 +90,7 @@ const EditCard = () => {
                 google_map_link: data.google_map_link || '',
                 google_map_link: data.google_map_link || '',
                 about: data.about || '',
+                cover_url: data.cover_url || '',
                 category: data.category || 'Personal',
                 theme_color: data.theme_color || '#6366f1',
                 template_id: data.template_id === 'programmer' ? 'professional-dev' : (data.template_id || 'modern'),
@@ -98,6 +103,7 @@ const EditCard = () => {
                 }
             });
             if (data.avatar_url) setAvatarUrl(data.avatar_url);
+            if (data.cover_url) setCoverUrl(data.cover_url);
 
         } catch (error) {
             console.error('Error fetching card:', error);
@@ -242,6 +248,7 @@ const EditCard = () => {
     const previewCard = {
         ...formData,
         avatar_url: avatarUrl,
+        cover_url: coverUrl,
         social_links: Object.keys(formData.social_links).reduce((acc, key) => {
             const username = formData.social_links[key];
             if (username) acc[key] = formatSocialUrl(key, username);
@@ -280,6 +287,7 @@ const EditCard = () => {
                 case 'red-geometric': return <RedGeometricCard {...props} />;
                 case 'circular-modern': return <CircularModernCard {...props} />;
                 case 'modern': return <ModernCard {...props} />;
+                case 'flip-card': return <FlipCard {...props} />;
                 case 'professional-dev': return <ProfessionalDevCard {...props} />;
                 default:
                     console.warn(`Template ID "${formData.template_id}" not found. Falling back to Modern.`);
@@ -330,7 +338,9 @@ const EditCard = () => {
                                             { id: 'minimalist', name: 'Minimalist', color: '#ffffff', border: true },
                                             { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
+                                            { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
+                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' },
                                             { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
                                         ].map(template => (
                                             <button

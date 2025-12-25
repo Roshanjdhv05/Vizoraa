@@ -6,12 +6,34 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
     const [loading, setLoading] = useState(false);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
+    const [cards, setCards] = useState([]);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
+        card_id: '',
         show_on_card: true,
-        show_on_home: false
+        show_on_home: true // Default to true now
     });
+
+    // Fetch user's cards on mount
+    React.useEffect(() => {
+        const fetchUserCards = async () => {
+            const { data } = await supabase
+                .from('cards')
+                .select('id, name, profession, theme_color')
+                .eq('user_id', userId);
+
+            if (data) {
+                setCards(data);
+                // Default to first card if exists
+                if (data.length > 0) {
+                    setFormData(prev => ({ ...prev, card_id: data[0].id }));
+                }
+            }
+        };
+
+        if (userId) fetchUserCards();
+    }, [userId]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -46,6 +68,7 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
 
             const { error } = await supabase.from('offers').insert({
                 user_id: userId,
+                card_id: formData.card_id || null, // Insert card_id
                 title: formData.title,
                 description: formData.description,
                 image_url: imageUrl || '',
@@ -66,7 +89,7 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in" >
             <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-scale-up">
                 {/* Header */}
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -120,6 +143,25 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
                             placeholder="e.g. 50% Off Summer Sale"
                         />
                     </div>
+
+                    {/* Card Selection Dropdown */}
+                    {cards.length > 0 && (
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-slate-700">Link to Card</label>
+                            <select
+                                value={formData.card_id}
+                                onChange={(e) => setFormData({ ...formData, card_id: e.target.value })}
+                                className="input-field w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all bg-white"
+                            >
+                                {cards.map(card => (
+                                    <option key={card.id} value={card.id}>
+                                        {card.name} ({card.profession || 'No Title'})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-slate-500">Clicking this offer will redirect users to this specific card.</p>
+                        </div>
+                    )}
 
                     {/* Description */}
                     <div className="space-y-2">
@@ -179,7 +221,7 @@ const CreateOfferModal = ({ onClose, onSuccess, userId }) => {
                     </button>
                 </form>
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -148,19 +148,18 @@ const Home = () => {
             // --- OFFERS INTEGRATION ---
             // Fetch all offers that are marked to show on home
             // We can do this in parallel or after.
+            // Fetch all offers to ensure badge visibility (User request: show for who has posted)
             const { data: offersData } = await supabase
                 .from('offers')
-                .select('user_id')
-                .eq('show_on_home', true);
-
-            // Create a set of user IDs with active offers
-            const userIdsWithOffers = new Set(offersData?.map(o => o.user_id));
+                .select('user_id, card_id');
 
             // Mark cards with has_active_offer
-            sortedCards = sortedCards.map(card => ({
-                ...card,
-                has_active_offer: userIdsWithOffers.has(card.user_id)
-            }));
+            sortedCards = sortedCards.map(card => {
+                // Simplified: Show offer badge if the USER has any offer (regardless of specific card link)
+                // This ensures maximum visibility as requested.
+                const hasOffer = offersData?.some(offer => offer.user_id === card.user_id);
+                return { ...card, has_active_offer: hasOffer };
+            });
 
             // Fetch Ratings
             let finalCards = cardsData || [];
@@ -358,41 +357,28 @@ const Home = () => {
                     return;
                 }
 
-                // Desktop: Viewport-Aware Positioning (Fixed coordinates)
-                const cardRect = element.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                // Use clientWidth to exclude scrollbar width
-                const viewportWidth = document.documentElement.clientWidth;
+                // Desktop: Page-Relative Positioning (Absolute coordinates)
+                // Use mainContainer dimensions mainly for width check
+                const viewportWidth = mainContainer.clientWidth;
+                const POPUP_WIDTH = Math.min(600, viewportWidth - 32);
+                const POPUP_HEIGHT_ESTIMATE = 700;
 
-                const POPUP_HEIGHT_ESTIMATE = 650;
-                const POPUP_WIDTH = Math.min(600, viewportWidth - 100); // Ensure popup itself isn't too wide
+                // Use offset properties for page-relative positioning
+                // This ensures the modal stays "at the bottom" if the card is at the bottom
+                // We calculate Center-to-Center based on the ELEMENT's page position
+                let leftPx = element.offsetLeft + (element.offsetWidth / 2) - (POPUP_WIDTH / 2);
+                let topPx = element.offsetTop + (element.offsetHeight / 2) - (POPUP_HEIGHT_ESTIMATE / 2);
 
-                // 1. Calculate Horizontal Position (Centered on Card, but Clamped)
-                let leftPx = cardRect.left + (cardRect.width / 2) - (POPUP_WIDTH / 2);
+                // Clamp Horizontal to Container
+                leftPx = Math.max(16, Math.min(leftPx, viewportWidth - POPUP_WIDTH - 16));
 
-                // Clamp horizontal to viewport edges (16px left, 80px right)
-                leftPx = Math.max(16, Math.min(leftPx, viewportWidth - POPUP_WIDTH - 80));
-
-                // 2. Decide Vertical Placement (Top vs Bottom)
-                const spaceBelow = viewportHeight - cardRect.bottom;
-                const spaceAbove = cardRect.top;
-
-                let placement = 'bottom';
-                let topPx = 0;
-
-                if (spaceBelow > POPUP_HEIGHT_ESTIMATE || spaceBelow > spaceAbove) {
-                    placement = 'bottom';
-                    topPx = cardRect.bottom + 12; // 12px gap
-                } else {
-                    placement = 'top';
-                    topPx = cardRect.top - 12; // 12px gap (This is the anchor point for bottom-up transform)
-                }
+                // Clamp Vertical (Just ensure it doesn't go off the very top of the content)
+                topPx = Math.max(16, topPx);
 
                 setExpandedPosition({
                     top: topPx,
                     left: leftPx,
-                    width: POPUP_WIDTH,
-                    placement
+                    width: POPUP_WIDTH
                 });
             }
         }, 50);
@@ -629,22 +615,20 @@ const Home = () => {
             {expandedCardData && (
                 <>
                     {/* Blurred Fixed Backdrop */}
-                    <div className="hidden md:block fixed inset-0 z-40 bg-white/10 backdrop-blur-md transition-all duration-500" onClick={handleCollapse}></div>
+                    <div className="hidden md:block fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-all duration-300" onClick={handleCollapse}></div>
 
-                    {/* Fixed Popup Content */}
+                    {/* Absolute Popup Content Positioned Relative to Page/Container */}
                     <div
-                        className={`hidden md:flex fixed z-50 flex-col items-center
-                            ${expandedPosition.placement === 'bottom' ? 'origin-top animate-slide-down' : 'origin-bottom animate-slide-up'}
-                        `}
+                        className="hidden md:flex absolute z-50 flex-col items-center transition-all duration-300 ease-out animate-scale-up origin-center"
                         style={{
                             top: expandedPosition.top,
                             left: expandedPosition.left,
                             width: expandedPosition.width,
-                            transform: expandedPosition.placement === 'top' ? 'translateY(-100%)' : 'none'
+                            maxHeight: '90vh' // Use vh for max height to ensure internal scrolling if needed
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="relative w-full max-h-[85vh] overflow-y-auto bg-slate-50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center border border-slate-200">
+                        <div className="relative w-full h-full overflow-y-auto bg-slate-50 rounded-[32px] p-6 shadow-2xl flex flex-col items-center border border-white/40">
                             <button
                                 onClick={handleCollapse}
                                 className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md hover:bg-slate-100 transition-colors z-10"

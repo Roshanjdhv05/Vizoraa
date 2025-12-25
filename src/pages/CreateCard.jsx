@@ -13,6 +13,7 @@ import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
+import FlipCard from '../components/Templates/FlipCard';
 
 const CreateCard = () => {
     const navigate = useNavigate();
@@ -342,6 +343,7 @@ const CreateCard = () => {
                 case 'red-geometric': return <RedGeometricCard {...props} />;
                 case 'circular-modern': return <CircularModernCard {...props} />;
                 case 'professional-dev': return <ProfessionalDevCard {...props} />;
+                case 'flip-card': return <FlipCard {...props} />;
                 case 'modern': return <ModernCard {...props} />;
                 default:
                     console.warn(`Template ID "${formData.template_id}" not found. Falling back to Modern.`);
@@ -394,7 +396,8 @@ const CreateCard = () => {
                                             { id: 'glassmorphism', name: 'Glass', color: '#FC466B' },
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
-                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
+                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' },
+                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -482,24 +485,40 @@ const CreateCard = () => {
                                 </div>
                             </div>
 
-                            {/* Cover Image Upload (Only for Hero Template) */}
-                            {formData.template_id === 'hero-cover-profile' && (
+                            {/* Cover Image/Video Upload (For Hero & Flip Templates) */}
+                            {(formData.template_id === 'hero-cover-profile' || formData.template_id === 'flip-card') && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        Cover Image
-                                        <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
+                                        {formData.template_id === 'flip-card' ? 'Front Side Media' : 'Cover Image'}
+                                        {formData.template_id === 'hero-cover-profile' && (
+                                            <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
+                                        )}
                                     </label>
                                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
                                         {coverUrl ? (
-                                            <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                            coverUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                                                <video src={coverUrl} className="w-full h-32 object-cover rounded-lg" autoPlay muted loop />
+                                            ) : (
+                                                <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                            )
                                         ) : (
                                             <div className="text-slate-400 py-4">
                                                 <Upload className="w-8 h-8 mx-auto mb-2 opacity-50 group-hover:scale-110 transition-transform" />
-                                                <p className="text-xs">Click to upload cover image</p>
+                                                <p className="text-xs">
+                                                    {formData.template_id === 'flip-card' ? 'Upload Image or Video' : 'Click to upload cover image'}
+                                                </p>
                                             </div>
                                         )}
-                                        <input type="file" accept="image/*" onChange={handleCoverSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        <input
+                                            type="file"
+                                            accept={formData.template_id === 'flip-card' ? "image/*,video/*" : "image/*"}
+                                            onChange={handleCoverSelect}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
                                     </div>
+                                    {formData.template_id === 'flip-card' && (
+                                        <p className="text-[10px] text-slate-400">Supported: JPG, PNG, MP4. Max size 5MB.</p>
+                                    )}
                                 </div>
                             )}
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Globe, Share2, Heart, Download, Loader2, Facebook, Instagram, Linkedin, Youtube, Bookmark, Star, BadgeCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const ModernCard = ({ card, isSaved, isLiked, userRating, handleLike, handleSave, handleRate, ratingStats, showRating = true, isVerified }) => {
     const [hoverRating, setHoverRating] = useState(0);
@@ -64,7 +65,18 @@ const ModernCard = ({ card, isSaved, isLiked, userRating, handleLike, handleSave
                         {card.name}
                         {isVerified && <BadgeCheck className="w-5 h-5 text-blue-200 fill-blue-500" />}
                     </h1>
-                    <p className="text-indigo-100 text-sm font-medium">{card.profession}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-indigo-100 text-sm font-medium">{card.profession}</p>
+                        {card.has_active_offer && (
+                            <Link
+                                to={`/offers?user_id=${card.user_id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-[10px] uppercase tracking-wider font-bold text-white bg-red-600 px-3 py-1 rounded-full animate-pulse hover:bg-red-700 pointer-events-auto shadow-lg"
+                            >
+                                OFFER
+                            </Link>
+                        )}
+                    </div>
                     <div className="flex items-center gap-1 text-xs text-indigo-100 mt-1 opacity-90">
                         <MapPin className="w-3 h-3" />
                         <a
