@@ -16,8 +16,14 @@ const Login = () => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                const from = location.state?.from?.pathname || '/';
-                navigate(from, { replace: true });
+                const redirectUrl = localStorage.getItem("redirect_after_login");
+                if (redirectUrl) {
+                    localStorage.removeItem("redirect_after_login");
+                    window.location.href = redirectUrl;
+                } else {
+                    const from = location.state?.from?.pathname || '/dashboard';
+                    navigate(from, { replace: true });
+                }
             }
         };
         checkSession();
@@ -36,8 +42,14 @@ const Login = () => {
 
             if (error) throw error;
 
-            const from = location.state?.from?.pathname || '/';
-            navigate(from, { replace: true });
+            const redirectUrl = localStorage.getItem("redirect_after_login");
+            if (redirectUrl) {
+                localStorage.removeItem("redirect_after_login");
+                window.location.href = redirectUrl;
+            } else {
+                const from = location.state?.from?.pathname || '/dashboard';
+                navigate(from, { replace: true });
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -47,8 +59,14 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            const from = location.state?.from?.pathname || '/';
-            const redirectUrl = `${window.location.origin}${from}`;
+            // Priority: Local Storage (from cards) > React Router State > Default Dashboard
+            let redirectUrl = localStorage.getItem("redirect_after_login");
+
+            if (!redirectUrl) {
+                const from = location.state?.from?.pathname || '/dashboard';
+                redirectUrl = `${window.location.origin}${from}`;
+            }
+
             console.log('Attempting Google Login with redirect:', redirectUrl);
 
             const { error } = await supabase.auth.signInWithOAuth({

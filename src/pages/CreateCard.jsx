@@ -15,6 +15,8 @@ import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
 import FlipCard from '../components/Templates/FlipCard';
 
+const PREMIUM_TEMPLATES = ['hero-cover-profile', 'flip-card'];
+
 const CreateCard = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -189,7 +191,8 @@ const CreateCard = () => {
 
         const options = {
             key: razropayKey,
-            amount: 9900, // 99 INR -> 9900 paise
+            key: razropayKey,
+            amount: 9900, // ₹99 (9900 paise)
             currency: 'INR',
             name: 'Vizoraa Premium Card',
             description: 'Unlock Hero Cover Template',
@@ -236,7 +239,7 @@ const CreateCard = () => {
 
             let finalCoverUrl = null;
             if (coverFile) {
-                finalCoverUrl = await uploadFile(coverFile, user.id, 'avatars');
+                finalCoverUrl = await uploadFile(coverFile, user.id, 'card_covers');
             }
 
             // Process Social Links
@@ -288,7 +291,8 @@ const CreateCard = () => {
         }
 
         // Check if Premium Template
-        if (formData.template_id === 'hero-cover-profile') {
+        // Check if Premium Template
+        if (PREMIUM_TEMPLATES.includes(formData.template_id)) {
             // Trigger Payment Flow
             await handlePayment();
         } else {
@@ -397,7 +401,8 @@ const CreateCard = () => {
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
                                             { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' },
-                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
+                                            { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
+                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -427,7 +432,8 @@ const CreateCard = () => {
                                     </h3>
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                         {[
-                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' }
+                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
+                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -485,40 +491,33 @@ const CreateCard = () => {
                                 </div>
                             </div>
 
-                            {/* Cover Image/Video Upload (For Hero & Flip Templates) */}
+                            {/* Cover Image Upload (For Hero & Flip Templates) */}
                             {(formData.template_id === 'hero-cover-profile' || formData.template_id === 'flip-card') && (
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                        {formData.template_id === 'flip-card' ? 'Front Side Media' : 'Cover Image'}
+                                        Cover Image
                                         {formData.template_id === 'hero-cover-profile' && (
                                             <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
                                         )}
                                     </label>
                                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
                                         {coverUrl ? (
-                                            coverUrl.match(/\.(mp4|webm|ogg)$/i) ? (
-                                                <video src={coverUrl} className="w-full h-32 object-cover rounded-lg" autoPlay muted loop />
-                                            ) : (
-                                                <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
-                                            )
+                                            <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
                                         ) : (
                                             <div className="text-slate-400 py-4">
                                                 <Upload className="w-8 h-8 mx-auto mb-2 opacity-50 group-hover:scale-110 transition-transform" />
                                                 <p className="text-xs">
-                                                    {formData.template_id === 'flip-card' ? 'Upload Image or Video' : 'Click to upload cover image'}
+                                                    Click to upload cover image
                                                 </p>
                                             </div>
                                         )}
                                         <input
                                             type="file"
-                                            accept={formData.template_id === 'flip-card' ? "image/*,video/*" : "image/*"}
+                                            accept="image/*"
                                             onChange={handleCoverSelect}
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                         />
                                     </div>
-                                    {formData.template_id === 'flip-card' && (
-                                        <p className="text-[10px] text-slate-400">Supported: JPG, PNG, MP4. Max size 5MB.</p>
-                                    )}
                                 </div>
                             )}
 
@@ -680,9 +679,9 @@ const CreateCard = () => {
                                         <Loader2 className="animate-spin w-5 h-5" />
                                     ) : (
                                         <>
-                                            {formData.template_id === 'hero-cover-profile' && !unlockedTemplates?.includes(formData.template_id) ? (
+                                            {PREMIUM_TEMPLATES.includes(formData.template_id) && !unlockedTemplates?.includes(formData.template_id) ? (
                                                 <>
-                                                    <Star className="w-5 h-5 fill-current" /> Pay & Create Card
+                                                    <Star className="w-5 h-5 fill-current" /> Pay & Create Card (₹99)
                                                 </>
                                             ) : (
                                                 <>

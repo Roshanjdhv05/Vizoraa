@@ -13,6 +13,18 @@ import CircularModernCard from '../components/Templates/CircularModernCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 import FlipCard from '../components/Templates/FlipCard';
 
+const PREMIUM_TEMPLATES = ['hero-cover-profile', 'flip-card'];
+
+const loadRazorpay = () => {
+    return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+};
+
 
 const EditCard = () => {
     const { id } = useParams();
@@ -154,6 +166,14 @@ const EditCard = () => {
         setAvatarUrl(URL.createObjectURL(file)); // Preview
     };
 
+    const handleCoverSelect = async (e) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const file = e.target.files[0];
+        setCoverFile(file);
+        setCoverUrl(URL.createObjectURL(file)); // Preview
+    };
+
     const uploadAvatar = async (userId) => {
         if (!avatarFile) return null;
 
@@ -174,6 +194,31 @@ const EditCard = () => {
         } catch (error) {
             console.error('Error uploading image:', error);
             alert('Error uploading image.');
+            return null;
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const uploadFile = async (file, userId, bucket = 'avatars') => {
+        if (!file) return null;
+
+        try {
+            setUploading(true);
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userId}/${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error) {
+            console.error('Error uploading file:', error);
             return null;
         } finally {
             setUploading(false);
@@ -216,6 +261,11 @@ const EditCard = () => {
                 if (uploadedUrl) finalAvatarUrl = uploadedUrl;
             }
 
+            let finalCoverUrl = coverUrl;
+            if (coverFile) {
+                finalCoverUrl = await uploadFile(coverFile, user.id, 'card_covers');
+            }
+
             const processedSocials = {};
             Object.entries(formData.social_links).forEach(([key, value]) => {
                 const url = formatSocialUrl(key, value);
@@ -227,6 +277,7 @@ const EditCard = () => {
                 .update({
                     ...formData,
                     avatar_url: finalAvatarUrl,
+                    cover_url: finalCoverUrl,
                     social_links: processedSocials
                 })
                 .eq('id', id)
@@ -254,6 +305,89 @@ const EditCard = () => {
             if (username) acc[key] = formatSocialUrl(key, username);
             return acc;
         }, {})
+    };
+
+    const handlePaymentAndSave = async (e) => {
+        e.preventDefault();
+
+        // Check if current template is premium and locked
+        const needsPayment = PREMIUM_TEMPLATES.includes(formData.template_id) && !unlockedTemplates.includes(formData.template_id);
+
+        if (!needsPayment) {
+            handleSubmit(e);
+            return;
+        }
+
+        const res = await loadRazorpay();
+        if (!res) {
+            alert('Razorpay SDK failed to load. Are you online?');
+            return;
+        }
+
+        const razropayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        if (!razropayKey) {
+            alert('Payment Configuration Error: Key not found.');
+            return;
+        }
+
+        const options = {
+            key: razropayKey,
+            key: razropayKey,
+            amount: 9900, // ₹99
+            currency: 'INR',
+            name: 'Unlock Premium Template',
+            description: `Unlock ${formData.template_id} for this card`,
+            image: 'https://via.placeholder.com/150', // Ideally use your logo
+            handler: async function (response) {
+                try {
+                    setLoading(true); // Show loading while unlocking
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error('User not found');
+
+                    // 1. Update unlocked_templates in Supabase
+                    const newUnlocked = [...unlockedTemplates, formData.template_id];
+
+                    const { error: updateError } = await supabase
+                        .from('profiles')
+                        .update({
+                            unlocked_templates: newUnlocked
+                        })
+                        .eq('id', user.id);
+
+                    if (updateError) throw updateError;
+
+                    // 2. Update local state
+                    setUnlockedTemplates(newUnlocked);
+
+                    alert('Template Unlocked Successfully!');
+
+                    // 3. Proceed to save the card logic (cloning handleSubmit logic to avoid event issues)
+                    // Re-triggering form submit would be cleaner but requires state update propagation
+                    // Direct save logic here:
+                    handleSubmit(e);
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Error unlocking template: ' + err.message);
+                } finally {
+                    setLoading(false);
+                }
+            },
+            prefill: {
+                name: formData.name,
+                email: formData.email,
+                contact: formData.phone
+            },
+            theme: {
+                color: '#f97316' // Orange for premium
+            }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.on('payment.failed', function (response) {
+            alert(`Payment Failed: ${response.error.description}`);
+        });
+        paymentObject.open();
     };
 
     const renderPreview = () => {
@@ -321,7 +455,7 @@ const EditCard = () => {
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handlePaymentAndSave} className="space-y-6">
 
                             {/* Template Selection */}
                             <div className="space-y-6">
@@ -340,7 +474,7 @@ const EditCard = () => {
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
-                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' },
+                                            { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
                                             { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
                                         ].map(template => (
                                             <button
@@ -371,7 +505,8 @@ const EditCard = () => {
                                     </h3>
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                         {[
-                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' }
+                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
+                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -428,6 +563,36 @@ const EditCard = () => {
                                     </label>
                                 </div>
                             </div>
+
+                            {/* Cover Image Upload (For Hero & Flip Templates) */}
+                            {(formData.template_id === 'hero-cover-profile' || formData.template_id === 'flip-card') && (
+                                <div className="space-y-2 mb-6 border-b border-slate-50 pb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                                    <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                        Cover Image
+                                        {formData.template_id === 'hero-cover-profile' && (
+                                            <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
+                                        )}
+                                    </label>
+                                    <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
+                                        {coverUrl ? (
+                                            <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                        ) : (
+                                            <div className="text-slate-400 py-4">
+                                                <Upload className="w-8 h-8 mx-auto mb-2 opacity-50 group-hover:scale-110 transition-transform" />
+                                                <p className="text-xs">
+                                                    Click to upload cover image
+                                                </p>
+                                            </div>
+                                        )}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleCoverSelect}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
@@ -571,11 +736,29 @@ const EditCard = () => {
                             <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100 p-4 -mx-6 -mb-6 md:-mx-8 md:-mb-8 rounded-b-2xl z-10">
                                 <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-medium hover:bg-slate-50">Cancel</button>
                                 <button
-                                    type="submit"
+                                    type="button"
+                                    onClick={handlePaymentAndSave}
                                     disabled={submitting || uploading}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg shadow-indigo-200"
+                                    className={`px-8 py-2.5 rounded-lg font-bold flex items-center gap-2 disabled:opacity-70 shadow-lg transition-all ${(PREMIUM_TEMPLATES.includes(formData.template_id) && !unlockedTemplates.includes(formData.template_id))
+                                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200'
+                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                                        }`}
                                 >
-                                    {submitting || uploading ? <Loader2 className="animate-spin w-5 h-5" /> : <><Save className="w-5 h-5" /> Update Card</>}
+                                    {submitting || uploading ? (
+                                        <Loader2 className="animate-spin w-5 h-5" />
+                                    ) : (
+                                        <>
+                                            {(PREMIUM_TEMPLATES.includes(formData.template_id) && !unlockedTemplates.includes(formData.template_id)) ? (
+                                                <>
+                                                    <Star className="w-5 h-5 fill-current" /> Pay & Update (₹99)
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-5 h-5" /> Update Card
+                                                </>
+                                            )}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>

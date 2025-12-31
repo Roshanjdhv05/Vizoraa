@@ -88,7 +88,10 @@ const ViewCard = () => {
     };
 
     const handleSave = async () => {
-        if (!user) return navigate('/login', { state: { from: location } });
+        if (!user) {
+            localStorage.setItem("redirect_after_login", window.location.href);
+            return navigate('/login');
+        }
         if (isSaved) {
             await supabase.from('saved_cards').delete().eq('user_id', user.id).eq('card_id', id);
             setIsSaved(false);
@@ -99,7 +102,10 @@ const ViewCard = () => {
     };
 
     const handleLike = async () => {
-        if (!user) return navigate('/login', { state: { from: location } });
+        if (!user) {
+            localStorage.setItem("redirect_after_login", window.location.href);
+            return navigate('/login');
+        }
         if (isLiked) {
             await supabase.from('card_likes').delete().eq('user_id', user.id).eq('card_id', id);
             setIsLiked(false);
@@ -110,7 +116,10 @@ const ViewCard = () => {
     };
 
     const handleRate = async (rating) => {
-        if (!user) return navigate('/login', { state: { from: location } });
+        if (!user) {
+            localStorage.setItem("redirect_after_login", window.location.href);
+            return navigate('/login');
+        }
         if (userRating > 0) return;
 
 

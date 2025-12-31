@@ -19,8 +19,14 @@ const Signup = () => {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
-                const from = location.state?.from?.pathname || '/';
-                navigate(from, { replace: true });
+                const redirectUrl = localStorage.getItem("redirect_after_login");
+                if (redirectUrl) {
+                    localStorage.removeItem("redirect_after_login");
+                    window.location.href = redirectUrl;
+                } else {
+                    const from = location.state?.from?.pathname || '/dashboard';
+                    navigate(from, { replace: true });
+                }
             }
         };
         checkSession();
@@ -50,8 +56,14 @@ const Signup = () => {
 
             // Auto login or redirect to dashboard (Supabase usually auto logs in)
             if (data.session) {
-                const from = location.state?.from?.pathname || '/';
-                navigate(from, { replace: true });
+                const redirectUrl = localStorage.getItem("redirect_after_login");
+                if (redirectUrl) {
+                    localStorage.removeItem("redirect_after_login");
+                    window.location.href = redirectUrl;
+                } else {
+                    const from = location.state?.from?.pathname || '/dashboard';
+                    navigate(from, { replace: true });
+                }
             } else {
                 // If email confirmation is enabled, you might see this
                 setError('Please check your email to confirm your account.');
@@ -65,8 +77,13 @@ const Signup = () => {
 
     const handleGoogleLogin = async () => {
         try {
-            const from = location.state?.from?.pathname || '/';
-            const redirectUrl = `${window.location.origin}${from}`;
+            // Priority: Local Storage (from cards) > React Router State > Default Dashboard
+            let redirectUrl = localStorage.getItem("redirect_after_login");
+
+            if (!redirectUrl) {
+                const from = location.state?.from?.pathname || '/dashboard';
+                redirectUrl = `${window.location.origin}${from}`;
+            }
 
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
