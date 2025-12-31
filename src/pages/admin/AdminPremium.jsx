@@ -47,7 +47,8 @@ const AdminPremium = () => {
 
     // Template Unlocking
     const unlockableTemplates = [
-        { id: 'hero-cover-profile', name: 'Hero Cover' }
+        { id: 'hero-cover-profile', name: 'Hero Cover' },
+        { id: 'flip-card', name: 'Flip Card' }
     ];
 
     const handleUnlockTemplate = async (templateId) => {
