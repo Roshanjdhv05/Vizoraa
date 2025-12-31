@@ -19,6 +19,7 @@ import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
+import FlipCard from '../components/Templates/FlipCard';
 
 const Home = () => {
     const navigate = useNavigate();
@@ -420,6 +421,8 @@ const Home = () => {
             case 'glassmorphism': CardComponent = GlassmorphismCard; break;
             case 'red-geometric': CardComponent = RedGeometricCard; break;
             case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
+            case 'professional-dev': CardComponent = ProfessionalDevCard; break;
+            case 'flip-card': CardComponent = FlipCard; break;
             case 'circular-modern': CardComponent = CircularModernCard; break;
             case 'modern': default: CardComponent = ModernCard; break;
         }
@@ -668,6 +671,7 @@ const Home = () => {
                                     case 'red-geometric': CardComponent = RedGeometricCard; break;
                                     case 'hero-cover-profile': CardComponent = HeroCoverProfileCard; break;
                                     case 'professional-dev': CardComponent = ProfessionalDevCard; break;
+                                    case 'flip-card': CardComponent = FlipCard; break;
                                     case 'circular-modern': CardComponent = CircularModernCard; break;
                                     case 'modern': default: CardComponent = ModernCard; break;
                                 }
