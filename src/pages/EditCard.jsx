@@ -59,7 +59,9 @@ const EditCard = () => {
             linkedin: '',
             facebook: '',
             twitter: '',
-            youtube: ''
+            twitter: '',
+            youtube: '',
+            whatsapp: ''
         }
     });
 
@@ -111,7 +113,9 @@ const EditCard = () => {
                     linkedin: extractUsername(data.social_links?.linkedin),
                     facebook: extractUsername(data.social_links?.facebook),
                     twitter: extractUsername(data.social_links?.twitter),
+                    twitter: extractUsername(data.social_links?.twitter),
                     youtube: extractUsername(data.social_links?.youtube),
+                    whatsapp: extractUsername(data.social_links?.whatsapp),
                 }
             });
             if (data.avatar_url) setAvatarUrl(data.avatar_url);
@@ -139,7 +143,9 @@ const EditCard = () => {
             // LinkedIn: linkedin.com/in/username
             // YouTube: youtube.com/@username
             if (url.includes('linkedin.com/in/')) return path.split('in/')[1] || path;
+            if (url.includes('linkedin.com/in/')) return path.split('in/')[1] || path;
             if (url.includes('youtube.com/@')) return path.split('@')[1] || path;
+            if (url.includes('wa.me/')) return path || url.split('/').pop();
 
             return path.split('/').pop();
         } catch (e) {
@@ -235,7 +241,9 @@ const EditCard = () => {
             case 'linkedin': return `https://linkedin.com/in/${username}`;
             case 'facebook': return `https://facebook.com/${username}`;
             case 'twitter': return `https://twitter.com/${username}`;
+            case 'twitter': return `https://twitter.com/${username}`;
             case 'youtube': return `https://youtube.com/@${username}`;
+            case 'whatsapp': return `https://wa.me/${username}`;
             default: return username;
         }
     };
@@ -691,7 +699,7 @@ const EditCard = () => {
                                     <h3 className="font-bold text-slate-800">Social Media Usernames</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube'].map(platform => (
+                                    {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube', 'whatsapp'].map(platform => (
                                         <div key={platform} className="relative">
                                             <span className="absolute left-3 top-2.5 text-slate-400 text-sm capitalize">{platform === 'linkedin' ? 'in/' : '@'}</span>
                                             <input

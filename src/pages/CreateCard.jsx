@@ -60,7 +60,9 @@ const CreateCard = () => {
             linkedin: '',
             facebook: '',
             twitter: '',
-            youtube: ''
+            twitter: '',
+            youtube: '',
+            whatsapp: ''
         }
     });
 
@@ -156,7 +158,9 @@ const CreateCard = () => {
             case 'linkedin': return `https://linkedin.com/in/${username}`;
             case 'facebook': return `https://facebook.com/${username}`;
             case 'twitter': return `https://twitter.com/${username}`;
+            case 'twitter': return `https://twitter.com/${username}`;
             case 'youtube': return `https://youtube.com/@${username}`;
+            case 'whatsapp': return `https://wa.me/${username}`;
             default: return username;
         }
     };
@@ -626,7 +630,7 @@ const CreateCard = () => {
                                 <p className="text-xs text-slate-500 -mt-3 mb-4">Just enter your username, we'll handle the links</p>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube'].map(platform => (
+                                    {['instagram', 'linkedin', 'facebook', 'twitter', 'youtube', 'whatsapp'].map(platform => (
                                         <div key={platform} className="relative group">
                                             <span className="absolute left-3 top-2.5 text-slate-400 text-sm capitalize">{platform === 'linkedin' ? 'in/' : '@'}</span>
                                             <input
