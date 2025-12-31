@@ -14,7 +14,8 @@ const FlipCard = ({ card, themeColor }) => {
     // 300px width -> ~525px height.
 
     // Check if cover is video
-    const isVideo = card.cover_url?.match(/\.(mp4|webm|ogg)$/i);
+    // Use optional chaining for cover_type (passed from preview) or regex for URL
+    const isVideo = card.cover_type?.startsWith('video/') || card.cover_url?.match(/\.(mp4|webm|ogg)$/i);
 
     return (
         <div

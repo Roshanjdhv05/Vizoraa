@@ -308,6 +308,7 @@ const EditCard = () => {
         ...formData,
         avatar_url: avatarUrl,
         cover_url: coverUrl,
+        cover_type: coverFile?.type, // Pass type for preview detection
         social_links: Object.keys(formData.social_links).reduce((acc, key) => {
             const username = formData.social_links[key];
             if (username) acc[key] = formatSocialUrl(key, username);
@@ -583,18 +584,22 @@ const EditCard = () => {
                                     </label>
                                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
                                         {coverUrl ? (
-                                            <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                            (coverFile?.type.startsWith('video/') || coverUrl.match(/\.(mp4|webm|ogg)$/i)) ? (
+                                                <video src={coverUrl} className="w-full h-32 object-cover rounded-lg" autoPlay loop muted playsInline />
+                                            ) : (
+                                                <img src={coverUrl} alt="Cover Preview" className="w-full h-32 object-cover rounded-lg" />
+                                            )
                                         ) : (
                                             <div className="text-slate-400 py-4">
                                                 <Upload className="w-8 h-8 mx-auto mb-2 opacity-50 group-hover:scale-110 transition-transform" />
                                                 <p className="text-xs">
-                                                    Click to upload cover image
+                                                    Click to upload cover media
                                                 </p>
                                             </div>
                                         )}
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept={formData.template_id === 'flip-card' ? "image/*,video/mp4,video/webm" : "image/*"}
                                             onChange={handleCoverSelect}
                                             className="absolute inset-0 opacity-0 cursor-pointer"
                                         />

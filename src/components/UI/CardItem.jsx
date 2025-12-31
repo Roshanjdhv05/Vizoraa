@@ -38,7 +38,7 @@ const CardItem = ({ card, isLiked, isSaved, onLike, onSave, onView, ratingAvg, r
                             className="h-36 -mx-6 -mt-6 mb-6 relative rounded-t-[32px] overflow-hidden border-b border-slate-100"
                             style={{ width: 'calc(100% + 3rem)' }}
                         >
-                            <img src={card.cover_url} alt="Cover" className="w-full h-full object-cover object-center" />
+                            <img src={card.cover_url} alt="Cover" className={`w-full h-full object-cover ${card.template_id === 'flip-card' ? 'object-top' : 'object-center'}`} />
                         </div>
 
                         {/* Overlapping Avatar */}

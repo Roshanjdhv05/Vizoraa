@@ -24,7 +24,7 @@ const HeroCoverProfileCard = ({ card, isSaved, isLiked, userRating, handleLike, 
     };
 
     return (
-        <div className="w-full max-w-sm bg-white rounded-[32px] overflow-hidden shadow-2xl relative min-h-[600px] flex flex-col font-sans">
+        <div className="w-[85%] md:w-full max-w-sm bg-white rounded-[32px] overflow-hidden shadow-2xl relative min-h-[600px] flex flex-col font-sans mx-auto">
 
             {/* 2. Top Cover Image (Hero Section) */}
             <div className="relative h-48 w-full">
