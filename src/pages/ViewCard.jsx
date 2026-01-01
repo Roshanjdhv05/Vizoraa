@@ -10,6 +10,7 @@ import RedGeometricCard from '../components/Templates/RedGeometricCard';
 import ProfessionalDevCard from '../components/Templates/ProfessionalDevCard';
 import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
+import FlipCard from '../components/Templates/FlipCard';
 
 import { getCardRating, addRating } from '../lib/supabaseClient';
 import { Star } from 'lucide-react';
@@ -148,6 +149,7 @@ const ViewCard = () => {
             case 'professional-dev': return <ProfessionalDevCard {...props} />;
             case 'hero-cover-profile': return <HeroCoverProfileCard {...props} />;
             case 'circular-modern': return <CircularModernCard {...props} />;
+            case 'flip-card': return <FlipCard {...props} />;
             case 'modern': default: return <ModernCard {...props} />;
         }
     };
