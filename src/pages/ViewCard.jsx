@@ -140,6 +140,7 @@ const ViewCard = () => {
 
     const renderTemplate = () => {
         const props = { card, isSaved, isLiked, userRating, handleLike, handleSave, handleRate, ratingStats };
+        console.log('Rendering template for ID:', card.template_id);
 
         switch (card.template_id) {
             case 'conference-gradient': return <ConferenceGradientCard {...props} />;

@@ -195,7 +195,6 @@ const CreateCard = () => {
 
         const options = {
             key: razropayKey,
-            key: razropayKey,
             amount: 9900, // ₹99 (9900 paise)
             currency: 'INR',
             name: 'Vizoraa Premium Card',

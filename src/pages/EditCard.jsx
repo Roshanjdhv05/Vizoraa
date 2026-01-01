@@ -341,7 +341,6 @@ const EditCard = () => {
 
         const options = {
             key: razropayKey,
-            key: razropayKey,
             amount: 9900, // ₹99
             currency: 'INR',
             name: 'Unlock Premium Template',
