@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CreditCard, Menu, User, LogOut, Bookmark } from 'lucide-react';
+import { CreditCard, Menu, User, LogOut, Bookmark, Flame } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 const Navbar = ({ session }) => {
@@ -22,6 +22,10 @@ const Navbar = ({ session }) => {
 
                 <div className="hidden md:flex items-center gap-6">
                     <Link to="/" className="text-gray-600 hover:text-indigo-600 font-medium">Home</Link>
+                    <Link to="/offers" className="text-gray-600 hover:text-orange-500 font-medium flex items-center gap-1">
+                        <Flame className="w-4 h-4 text-orange-500" />
+                        Offers
+                    </Link>
                     <div className="bg-gray-200 h-6 w-[1px]"></div>
 
                     {session ? (
@@ -82,6 +86,9 @@ const Navbar = ({ session }) => {
 
                         <div className="flex-1 overflow-y-auto py-4 px-4 flex flex-col gap-4">
                             <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 font-medium py-2 border-b border-gray-50">Home</Link>
+                            <Link to="/offers" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 font-medium py-2 border-b border-gray-50 flex items-center gap-2">
+                                <Flame className="w-4 h-4 text-orange-500" /> Offers
+                            </Link>
                             {session ? (
                                 <>
                                     <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 font-medium py-2 border-b border-gray-50">Dashboard</Link>

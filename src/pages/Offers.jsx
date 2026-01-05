@@ -17,12 +17,35 @@ const Offers = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     // Search/Filter state
-    const [searchQuery, setSearchQuery] = useState('');
+    const [filters, setFilters] = useState({
+        search: '',
+        occupation: [],
+        category: 'All',
+        area: '',
+        state: [],
+        country: [],
+        sort: 'newest'
+    });
+
+    const [occupations, setOccupations] = useState([]);
 
     useEffect(() => {
         checkUser();
+        fetchOccupations();
+    }, []);
+
+    // Fetch offers whenever filters change (debouncing could be added but direct call is okay for now)
+    useEffect(() => {
         fetchOffers();
-    }, [filteredUserId]);
+    }, [filters, filteredUserId]);
+
+    const fetchOccupations = async () => {
+        const { data } = await supabase.from('cards').select('profession');
+        if (data) {
+            const unique = [...new Set(data.map(item => item.profession).filter(Boolean))];
+            setOccupations(unique);
+        }
+    };
 
     const checkUser = async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -32,56 +55,90 @@ const Offers = () => {
     const fetchOffers = async () => {
         setLoading(true);
         try {
-            // Need to join with user details. 
-            // Since we don't have a direct relation set up in Supabase client type (maybe),
-            // we will fetch offers and then map user data or use a joined query if 'profiles' or 'cards' are linked.
-            // Let's assume we can join with 'cards' table on user_id to get avatar/name or 'profiles' table.
+            // STEP 1: RESOLVE USER FILTERS (Card/Profile based)
+            // If any filter relates to the User/Card (Occupation, Location), we must find matching UserIDs first.
+            let validUserIds = null;
+            const hasUserFilters = filters.occupation.length > 0 || filters.area || filters.state.length > 0 || filters.country.length > 0;
 
-            // However, Supabase joins work best if foreign keys are explicit. 
-            // 'offers.user_id' -> 'auth.users.id'. 
-            // We usually store user profile info in 'public.profiles' or 'public.cards'.
-            // Let's rely on 'cards' to get the display info (name/avatar) since that's what we show.
-            // We'll fetch offers first.
+            if (hasUserFilters) {
+                let cardQuery = supabase.from('cards').select('user_id');
 
+                if (filters.occupation.length > 0) {
+                    const orClause = filters.occupation.map(job => `profession.ilike.%${job}%`).join(',');
+                    cardQuery = cardQuery.or(orClause);
+                }
+                if (filters.area) {
+                    cardQuery = cardQuery.ilike('location', `%${filters.area}%`);
+                }
+                if (filters.state.length > 0) {
+                    const orClause = filters.state.map(s => `location.ilike.%${s}%`).join(',');
+                    cardQuery = cardQuery.or(orClause);
+                }
+                if (filters.country.length > 0) {
+                    const orClause = filters.country.map(c => `location.ilike.%${c}%`).join(',');
+                    cardQuery = cardQuery.or(orClause);
+                }
+
+                const { data: matchingCards, error: cardError } = await cardQuery;
+                if (cardError) throw cardError;
+
+                validUserIds = matchingCards.map(c => c.user_id);
+
+                // If filters are active but no users match, return empty result strictly
+                if (validUserIds.length === 0) {
+                    setOffers([]);
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // STEP 2: FETCH OFFERS
             let query = supabase
                 .from('offers')
                 .select(`
                     *,
                     offer_likes (user_id)
-                `)
-                .order('created_at', { ascending: false });
+                `);
 
-            if (searchQuery) {
-                query = query.ilike('title', `%${searchQuery}%`);
+            // Apply Search on Title
+            if (filters.search) {
+                query = query.ilike('title', `%${filters.search}%`);
             }
 
-            // Filter by specific user if param exists
+            // Apply User ID Restrictions
             if (filteredUserId) {
+                // Specific profile view overrides other filters usually, but let's allow combined
                 query = query.eq('user_id', filteredUserId);
+            } else if (validUserIds !== null) {
+                // Apply the filter result
+                query = query.in('user_id', validUserIds);
             }
+
+            // Apply Sorting
+            if (filters.sort === 'newest') {
+                query = query.order('created_at', { ascending: false });
+            }
+            // Note: 'likes' sorting usually requires client-side sort after fetch if not using an RPC or view, 
+            // OR we fetch all and sort below. We'll default to DB sort for newest.
 
             const { data: offersData, error } = await query;
             if (error) throw error;
 
-            // Enrich with user data from 'cards' table (as a proxy for user profile)
-            // We get the *primary* card for each user.
+            // Enrich with user data from 'cards' table
             const userIds = [...new Set(offersData.map(o => o.user_id))];
 
             if (userIds.length > 0) {
                 const { data: cardsData } = await supabase
                     .from('cards')
-                    .select('id, user_id, name, avatar_url, profession') // Added profession for context if needed
+                    .select('id, user_id, name, avatar_url, profession')
                     .in('user_id', userIds);
 
                 // Map card info to offers
-                const enrichedOffers = offersData.map(offer => {
-                    // Try to find specific card if selected, otherwise fallback to first user card
+                let enrichedOffers = offersData.map(offer => {
                     const userCard = offer.card_id
                         ? cardsData?.find(c => c.id === offer.card_id)
                         : cardsData?.find(c => c.user_id === offer.user_id);
 
-                    // Check if current user liked this
-                    const { data: { user: currentUser } } = { data: { user } } || { data: { user: null } };
                     const isLiked = offer.offer_likes?.some(like => like.user_id === user?.id) || false;
                     const likeCount = offer.offer_likes?.length || 0;
 
@@ -90,11 +147,16 @@ const Offers = () => {
                         user_name: userCard?.name || 'Unknown User',
                         user_avatar: userCard?.avatar_url,
                         profession: userCard?.profession,
-                        cards: userCard ? [userCard] : [], // Pass cards array for navigation
+                        cards: userCard ? [userCard] : [],
                         is_liked_by_user: isLiked,
                         like_count: likeCount
                     };
                 });
+
+                // Client-side Sorting (for aggregations we can't easily DB sort without Views)
+                if (filters.sort === 'likes' || filters.sort === 'rating' || filters.sort === 'views') {
+                    enrichedOffers.sort((a, b) => b.like_count - a.like_count);
+                }
 
                 setOffers(enrichedOffers);
             } else {
@@ -121,51 +183,49 @@ const Offers = () => {
             {/* Header / Hero */}
             <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
                 <div className="container max-w-5xl mx-auto px-4 py-4 md:py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                                <Flame className="w-6 h-6 text-orange-500 fill-orange-500 animate-pulse" />
-                                {filteredUserId ? 'User Offers' : 'Exclusive Offers'}
-                            </h1>
-                            <p className="text-slate-500 text-sm">
-                                {filteredUserId
-                                    ? 'Viewing offers from selected profile'
-                                    : 'Discover latest deals from professionals'
-                                }
-                                {filteredUserId && (
-                                    <button
-                                        onClick={() => navigate('/offers')}
-                                        className="ml-2 text-indigo-600 underline font-semibold"
-                                    >
-                                        View All
-                                    </button>
-                                )}
-                            </p>
-                        </div>
-
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                            {/* Search */}
-                            <div className="relative flex-1 md:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input
-                                    type="text"
-                                    placeholder="Search offers..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && fetchOffers()}
-                                    className="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-indigo-200 outline-none"
-                                />
+                    <div className="flex flex-col gap-6">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                                    <Flame className="w-6 h-6 text-orange-500 fill-orange-500 animate-pulse" />
+                                    {filteredUserId ? 'User Offers' : 'Exclusive Offers'}
+                                </h1>
+                                <p className="text-slate-500 text-sm">
+                                    {filteredUserId
+                                        ? 'Viewing offers from selected profile'
+                                        : 'Discover latest deals from professionals'
+                                    }
+                                    {filteredUserId && (
+                                        <button
+                                            onClick={() => navigate('/offers')}
+                                            className="ml-2 text-indigo-600 underline font-semibold"
+                                        >
+                                            View All
+                                        </button>
+                                    )}
+                                </p>
                             </div>
 
                             {/* Post Button */}
                             <button
                                 onClick={handleCreateClick}
-                                className="bg-slate-900 hover:bg-black text-white px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-slate-200"
+                                className="bg-slate-900 hover:bg-black text-white px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-slate-200 self-start md:self-auto"
                             >
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline">Post Offer</span>
                                 <span className="sm:hidden">Post</span>
                             </button>
+                        </div>
+
+                        {/* Reused Search Component */}
+                        <div className="-mx-4 md:mx-0">
+                            <AdvancedSearchFilter
+                                filters={filters}
+                                setFilters={setFilters}
+                                onSearch={fetchOffers}
+                                occupations={occupations}
+                                placeholder="Search offers..."
+                            />
                         </div>
                     </div>
                 </div>

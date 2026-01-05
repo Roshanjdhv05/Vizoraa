@@ -77,7 +77,7 @@ const MultiSelectDropdown = ({ label, icon: Icon, options, selected, onChange, s
     );
 };
 
-const AdvancedSearchFilter = ({ filters, setFilters, onSearch, occupations = [] }) => {
+const AdvancedSearchFilter = ({ filters, setFilters, onSearch, occupations = [], showFilters = true, placeholder = "Search by name, service, or keyword..." }) => {
     // Mock Data for demo - effectively "Searchable Dropdowns"
     const allStates = ["California", "New York", "Texas", "Florida", "Illinois", "Washington", "Maharashtra", "Karnataka", "Delhi", "London", "Bavaria"];
     const allCountries = ["USA", "India", "UK", "Canada", "Germany", "Australia", "UAE", "Singapore"];
@@ -130,8 +130,8 @@ const AdvancedSearchFilter = ({ filters, setFilters, onSearch, occupations = [] 
                         type="text"
                         value={filters.search}
                         onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                        placeholder="Search by name, service, or keyword..."
-                        className="w-full pl-16 pr-12 lg:pr-32 py-5 rounded-full bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 outline-none text-slate-700 text-lg font-medium placeholder:text-slate-400 focus:shadow-[0_8px_30px_rgba(123,75,255,0.15)] focus:border-[#7B4BFF]/20 transition-all hover:border-gray-200"
+                        placeholder={placeholder}
+                        className="w-full pl-16 pr-28 lg:pr-32 py-5 rounded-full bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 outline-none text-slate-700 text-lg font-medium placeholder:text-slate-400 focus:shadow-[0_8px_30px_rgba(123,75,255,0.15)] focus:border-[#7B4BFF]/20 transition-all hover:border-gray-200"
                     />
 
                     {/* Desktop Search Button */}
@@ -142,76 +142,88 @@ const AdvancedSearchFilter = ({ filters, setFilters, onSearch, occupations = [] 
                         Search
                     </button>
 
-                    {/* Mobile Filter Trigger (Inside Bar) */}
+                    {/* Mobile Search Button (New) */}
                     <button
-                        onClick={() => setIsMobileSheetOpen(true)}
-                        className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gray-50 text-slate-600 hover:bg-gray-100 hover:text-[#7B4BFF] transition-all active:scale-90"
+                        onClick={onSearch}
+                        className="lg:hidden absolute right-16 top-1/2 -translate-y-1/2 p-3 rounded-full bg-[#7B4BFF] text-white shadow-md active:scale-90 transition-all hover:bg-[#6835de]"
                     >
-                        <SlidersHorizontal className="w-5 h-5" />
+                        <Search className="w-5 h-5" />
                     </button>
+
+                    {/* Mobile Filter Trigger (Inside Bar) */}
+                    {showFilters && (
+                        <button
+                            onClick={() => setIsMobileSheetOpen(true)}
+                            className="lg:hidden absolute right-3 top-1/2 -translate-y-1/2 p-3 rounded-full bg-gray-50 text-slate-600 hover:bg-gray-100 hover:text-[#7B4BFF] transition-all active:scale-90"
+                        >
+                            <SlidersHorizontal className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* 2. Desktop Filters Section (Below Search) */}
-            <div
-                className={`hidden lg:flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500 fill-mode-forwards`}
-            >
-                <div className="flex-1 flex flex-wrap items-center gap-3">
-                    <MultiSelectDropdown
-                        label="Occupation"
-                        icon={Briefcase}
-                        options={occupations}
-                        selected={filters.occupation}
-                        onChange={(val) => setFilters(prev => ({ ...prev, occupation: val }))}
-                    />
+            {showFilters && (
+                <div
+                    className={`hidden lg:flex flex-wrap items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500 fill-mode-forwards`}
+                >
+                    <div className="flex-1 flex flex-wrap items-center gap-3">
+                        <MultiSelectDropdown
+                            label="Occupation"
+                            icon={Briefcase}
+                            options={occupations}
+                            selected={filters.occupation}
+                            onChange={(val) => setFilters(prev => ({ ...prev, occupation: val }))}
+                        />
 
-                    <div className="relative group min-w-[180px]">
-                        <div className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors text-sm font-medium shadow-sm hover:shadow-md">
-                            <MapPin className="w-4 h-4 text-slate-400" />
-                            <input
-                                type="text"
-                                value={filters.area}
-                                onChange={(e) => setFilters(prev => ({ ...prev, area: e.target.value }))}
-                                placeholder="Area"
-                                className="w-full bg-transparent outline-none text-slate-700 placeholder:text-slate-500"
-                            />
+                        <div className="relative group min-w-[180px]">
+                            <div className="flex items-center gap-2 px-5 py-3.5 rounded-xl border border-gray-200 bg-white hover:border-gray-300 transition-colors text-sm font-medium shadow-sm hover:shadow-md">
+                                <MapPin className="w-4 h-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={filters.area}
+                                    onChange={(e) => setFilters(prev => ({ ...prev, area: e.target.value }))}
+                                    placeholder="Area"
+                                    className="w-full bg-transparent outline-none text-slate-700 placeholder:text-slate-500"
+                                />
+                            </div>
                         </div>
+
+                        <MultiSelectDropdown
+                            label="State"
+                            icon={MapPin}
+                            options={allStates}
+                            selected={filters.state}
+                            onChange={(val) => setFilters(prev => ({ ...prev, state: val }))}
+                        />
+
+                        <MultiSelectDropdown
+                            label="Country"
+                            icon={Globe}
+                            options={allCountries}
+                            selected={filters.country}
+                            onChange={(val) => setFilters(prev => ({ ...prev, country: val }))}
+                        />
                     </div>
 
-                    <MultiSelectDropdown
-                        label="State"
-                        icon={MapPin}
-                        options={allStates}
-                        selected={filters.state}
-                        onChange={(val) => setFilters(prev => ({ ...prev, state: val }))}
-                    />
-
-                    <MultiSelectDropdown
-                        label="Country"
-                        icon={Globe}
-                        options={allCountries}
-                        selected={filters.country}
-                        onChange={(val) => setFilters(prev => ({ ...prev, country: val }))}
-                    />
+                    {/* Sort Dropdown */}
+                    <div className="relative min-w-[160px]">
+                        <select
+                            value={filters.sort}
+                            onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value }))}
+                            className="w-full appearance-none flex items-center gap-2 px-5 py-3.5 pr-12 rounded-xl border border-gray-200 bg-white text-sm font-medium text-slate-600 outline-none focus:border-[#7B4BFF] hover:border-gray-300 hover:shadow-md transition-all cursor-pointer shadow-sm"
+                        >
+                            {sortOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                    </div>
                 </div>
-
-                {/* Sort Dropdown */}
-                <div className="relative min-w-[160px]">
-                    <select
-                        value={filters.sort}
-                        onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value }))}
-                        className="w-full appearance-none flex items-center gap-2 px-5 py-3.5 pr-12 rounded-xl border border-gray-200 bg-white text-sm font-medium text-slate-600 outline-none focus:border-[#7B4BFF] hover:border-gray-300 hover:shadow-md transition-all cursor-pointer shadow-sm"
-                    >
-                        {sortOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                </div>
-            </div>
+            )}
 
             {/* Active Pills Section */}
-            {(filters.occupation.length > 0 || filters.state.length > 0 || filters.country.length > 0 || filters.area || filters.sort !== 'newest') && (
+            {showFilters && (filters.occupation.length > 0 || filters.state.length > 0 || filters.country.length > 0 || filters.area || filters.sort !== 'newest') && (
                 <div className="flex flex-wrap items-center gap-3 animate-fadeIn px-2 lg:px-0">
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Filters:</span>
 
