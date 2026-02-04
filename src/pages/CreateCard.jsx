@@ -15,7 +15,7 @@ import HeroCoverProfileCard from '../components/Templates/HeroCoverProfileCard';
 import CircularModernCard from '../components/Templates/CircularModernCard';
 import FlipCard from '../components/Templates/FlipCard';
 
-const PREMIUM_TEMPLATES = ['hero-cover-profile', 'flip-card'];
+
 
 const CreateCard = () => {
     const navigate = useNavigate();
@@ -59,7 +59,6 @@ const CreateCard = () => {
             instagram: '',
             linkedin: '',
             facebook: '',
-            twitter: '',
             twitter: '',
             youtube: '',
             whatsapp: ''
@@ -157,7 +156,6 @@ const CreateCard = () => {
             case 'instagram': return `https://instagram.com/${username}`;
             case 'linkedin': return `https://linkedin.com/in/${username}`;
             case 'facebook': return `https://facebook.com/${username}`;
-            case 'twitter': return `https://twitter.com/${username}`;
             case 'twitter': return `https://twitter.com/${username}`;
             case 'youtube': return `https://youtube.com/@${username}`;
             case 'whatsapp': return `https://wa.me/${username}`;
@@ -275,33 +273,8 @@ const CreateCard = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validation for Google Map Link
-        if (formData.google_map_link && !formData.google_map_link.startsWith('http')) {
-            alert('Please enter a valid Google Maps link (e.g., https://maps.app.goo.gl/...)');
-            return;
-        }
-
         setLoading(true);
-
-        // Check for Unlocked Template
-        const isTemplateUnlocked = unlockedTemplates?.includes(formData.template_id);
-
-        if (isTemplateUnlocked) {
-            // Bypass Payment for Unlocked Template
-            await createCard(true); // Treat as premium
-            return;
-        }
-
-        // Check if Premium Template
-        // Check if Premium Template
-        if (PREMIUM_TEMPLATES.includes(formData.template_id)) {
-            // Trigger Payment Flow
-            await handlePayment();
-        } else {
-            // Create Free Card Directly
-            await createCard(false);
-        }
+        await createCard(false);
     };
 
     // Prepare preview data
@@ -405,8 +378,8 @@ const CreateCard = () => {
                                             { id: 'red-geometric', name: 'Geometric', color: '#EF4444' },
                                             { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
                                             { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' },
-                                            { id: 'circular-modern', name: 'Modern Circ', color: '#10b981' },
-                                            { id: 'professional-dev', name: 'Dev Pro', color: '#1e1e1e' }
+                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
+                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
                                         ].map(template => (
                                             <button
                                                 key={template.id}
@@ -426,56 +399,20 @@ const CreateCard = () => {
                                     </div>
                                 </div>
 
-                                {/* Premium Templates */}
-                                <div className="space-y-3">
+                                {/* Premium Templates Placeholder */}
+                                <div className="space-y-3 opacity-60">
                                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
                                         Premium Templates
-                                        <span className="text-xs font-normal bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                                        <span className="text-[10px] font-normal bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100 flex items-center gap-1">
                                             <Star className="w-3 h-3 fill-current" /> Pro
                                         </span>
                                     </h3>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                                        {[
-                                            { id: 'hero-cover-profile', name: 'Hero Cover', color: '#f97316' },
-                                            { id: 'flip-card', name: 'Flip Card', color: '#334155' }
-                                        ].map(template => (
-                                            <button
-                                                key={template.id}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, template_id: template.id })}
-                                                className={`relative p-2 rounded-xl border-2 transition-all flex flex-col items-center gap-2 overflow-hidden ${formData.template_id === template.id ? 'border-amber-500 bg-amber-50' : 'border-slate-100 hover:border-amber-200'}`}
-                                            >
-                                                {unlockedTemplates?.includes(template.id) ? (
-                                                    <div className="absolute top-0 right-0 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10 flex items-center gap-1">
-                                                        <LayoutTemplate className="w-2 h-2" /> UNLOCKED
-                                                    </div>
-                                                ) : (
-                                                    <div className="absolute top-0 right-0 bg-amber-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">PRO</div>
-                                                )}
-
-                                                <div
-                                                    className={`w-full h-12 rounded-lg shadow-sm relative overflow-hidden`}
-                                                    style={{ background: template.color }}
-                                                >
-                                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/10 to-transparent"></div>
-                                                </div>
-                                                <span className={`text-[10px] uppercase tracking-wide font-bold ${formData.template_id === template.id ? 'text-amber-700' : 'text-slate-500'}`}>
-                                                    {template.name}
-                                                </span>
-
-                                                {unlockedTemplates?.includes(template.id) ? (
-                                                    <span className="text-[10px] font-bold text-green-700 bg-green-50 px-1.5 rounded border border-green-200">
-                                                        Free
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] font-bold text-slate-900 bg-white px-1.5 rounded border border-slate-200">
-                                                        ₹99
-                                                    </span>
-                                                )}
-                                            </button>
-                                        ))}
+                                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest italic">Coming Soon</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">New premium designs are under development</p>
                                     </div>
                                 </div>
+
                             </div>
 
                             {/* Profile Picture Upload */}
@@ -500,9 +437,6 @@ const CreateCard = () => {
                                 <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <label className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                         Cover Image
-                                        {formData.template_id === 'hero-cover-profile' && (
-                                            <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium Feature</span>
-                                        )}
                                     </label>
                                     <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors relative overflow-hidden group cursor-pointer">
                                         {coverUrl ? (
@@ -594,7 +528,6 @@ const CreateCard = () => {
                                     <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                                         <MapPin className="w-4 h-4 text-indigo-500" />
                                         Google Map Location
-                                        <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">Premium</span>
                                     </label>
                                     <input
                                         type="text"
@@ -681,22 +614,14 @@ const CreateCard = () => {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className={`px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg transition-all transform active:scale-95 ${formData.template_id === 'hero-cover-profile' ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 text-white' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 text-white'}`}
+                                    className={`px-8 py-2.5 rounded-lg font-medium flex items-center gap-2 disabled:opacity-70 shadow-lg transition-all transform active:scale-95 bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200 text-white`}
                                 >
                                     {loading || uploading ? (
                                         <Loader2 className="animate-spin w-5 h-5" />
                                     ) : (
                                         <>
-                                            {PREMIUM_TEMPLATES.includes(formData.template_id) && !unlockedTemplates?.includes(formData.template_id) ? (
-                                                <>
-                                                    <Star className="w-5 h-5 fill-current" /> Pay & Create Card (₹99)
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Save className="w-5 h-5" />
-                                                    {unlockedTemplates?.includes(formData.template_id) ? 'Create Information Card (Free)' : 'Create Card'}
-                                                </>
-                                            )}
+                                            <Save className="w-5 h-5" />
+                                            Create Card
                                         </>
                                     )}
                                 </button>
