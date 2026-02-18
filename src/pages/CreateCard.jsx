@@ -178,7 +178,7 @@ const CreateCard = () => {
         const res = await loadRazorpay();
 
         if (!res) {
-            alert('Razropay SDK failed to load. Are you online?');
+            alert('Razorpay SDK failed to load. Are you online?');
             return false;
         }
 
@@ -188,40 +188,59 @@ const CreateCard = () => {
             return false;
         }
 
-        // 1. Create a dummy order or just use manual client-side capture for prototype
-        // In production, you would call your backend API here to create an order: /api/create-order
+        try {
+            // 1. Create Order via Supabase Edge Function (Secure way)
+            const { data: orderData, error: orderError } = await supabase.functions.invoke('create-order', {
+                body: {
+                    amount: 100, // ₹1 (100 paise)
+                    currency: 'INR',
+                    receipt: `receipt_card_${Date.now()}`,
+                    notes: {
+                        purpose: 'Unlock Hero Cover Template',
+                        template_id: formData.template_id
+                    }
+                }
+            });
 
-        const options = {
-            key: razropayKey,
-            amount: 9900, // ₹99 (9900 paise)
-            currency: 'INR',
-            name: 'Vizoraa Premium Card',
-            description: 'Unlock Hero Cover Template',
-            image: avatarUrl || 'https://via.placeholder.com/150',
-            handler: function (response) {
-                // Payment Success!
-                // alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
-                createCard(true, response.razorpay_payment_id);
-            },
-            prefill: {
-                name: formData.name,
-                email: formData.email,
-                contact: formData.phone
-            },
-            notes: {
-                address: 'Vizoraa Corporate Office'
-            },
-            theme: {
-                color: '#f97316'
+            if (orderError || !orderData?.id) {
+                console.error('Order Error:', orderError);
+                throw new Error(orderError?.message || 'Failed to create order. Please ensure Edge Function is deployed.');
             }
-        };
 
-        const paymentObject = new window.Razorpay(options);
-        paymentObject.on('payment.failed', function (response) {
-            alert(`Payment Failed: ${response.error.description}`);
+            const options = {
+                key: razropayKey,
+                amount: orderData.amount, // Use amount from order
+                currency: 'INR',
+                name: 'Vizoraa Premium Card',
+                description: 'Unlock Hero Cover Template',
+                image: avatarUrl || 'https://via.placeholder.com/150',
+                order_id: orderData.id, // Mandatory for auto-capture
+                handler: function (response) {
+                    // Payment Success!
+                    createCard(true, response.razorpay_payment_id);
+                },
+                prefill: {
+                    name: formData.name,
+                    email: formData.email,
+                    contact: formData.phone
+                },
+                theme: {
+                    color: '#f97316'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.on('payment.failed', function (response) {
+                alert(`Payment Failed: ${response.error.description}`);
+                setLoading(false);
+            });
+            paymentObject.open();
+
+        } catch (err) {
+            console.error('Order creation error:', err);
+            alert('Could not initiate payment: ' + err.message);
             setLoading(false);
-        });
-        paymentObject.open();
+        }
     };
 
     const createCard = async (isPremium = false, paymentId = null) => {

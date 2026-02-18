@@ -13,7 +13,7 @@ const Premium = () => {
             id: '1_month',
             name: 'Monthly Gold',
             duration: '1 Month',
-            price: 69,
+            price: 1,
             originalPrice: 199,
             features: ['Boost your profile', 'Priority Support'],
             color: 'bg-white',
@@ -24,7 +24,7 @@ const Premium = () => {
             id: '6_months',
             name: 'Half-Yearly Gold',
             duration: '6 Months',
-            price: 269,
+            price: 1,
             originalPrice: 1194,
             features: ['Boost your profile', 'Priority Support'],
             color: 'bg-gradient-to-b from-amber-50 to-white', // Gold tint
@@ -36,7 +36,7 @@ const Premium = () => {
             id: '12_months',
             name: 'Annual Gold',
             duration: '12 Months',
-            price: 569,
+            price: 1,
             originalPrice: 2388,
             features: ['Boost your profile', 'Priority Support'],
             color: 'bg-white',
@@ -73,60 +73,104 @@ const Premium = () => {
             return;
         }
 
-        const options = {
-            key: razropayKey,
-            amount: plan.price * 100, // Amount in paise
-            currency: 'INR',
-            name: `Vizoraa ${plan.name}`,
-            description: `Subscription for ${plan.duration}`,
-            image: 'https://via.placeholder.com/150', // Replace with logo
-            handler: async function (response) {
-                try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) throw new Error('User not found');
-
-                    // Calculate expiry
-                    const now = new Date();
-                    let expiryDate = new Date();
-
-                    if (plan.id === '1_month') expiryDate.setMonth(now.getMonth() + 1);
-                    if (plan.id === '6_months') expiryDate.setMonth(now.getMonth() + 6);
-                    if (plan.id === '12_months') expiryDate.setFullYear(now.getFullYear() + 1);
-
-                    // Update Profile
-                    const { error } = await supabase
-                        .from('profiles')
-                        .update({
-                            subscription_plan: 'gold',
-                            subscription_expiry: expiryDate.toISOString(),
-                            // Store payment ref if we had a dedicated table for transactions, 
-                            // but for now relying on Razorpay dashboard
-                        })
-                        .eq('id', user.id);
-
-                    if (error) throw error;
-
-                    alert('Subscription Successful! Welcome to Gold.');
-                    navigate('/dashboard');
-
-                } catch (err) {
-                    console.error(err);
-                    alert('Subscription recorded failed: ' + err.message);
-                } finally {
-                    setLoading(false);
+        try {
+            // 1. Create Order via Supabase Edge Function (Secure way)
+            const { data: orderData, error: orderError } = await supabase.functions.invoke('create-order', {
+                body: {
+                    amount: plan.price * 100,
+                    currency: 'INR',
+                    receipt: `receipt_${Date.now()}`,
+                    notes: {
+                        plan_id: plan.id,
+                        plan_name: plan.name
+                    }
                 }
-            },
-            theme: {
-                color: '#f59e0b'
-            }
-        };
+            });
 
-        const paymentObject = new window.Razorpay(options);
-        paymentObject.on('payment.failed', function (response) {
-            alert(`Payment Failed: ${response.error.description}`);
+            if (orderError) {
+                console.error('Detailed Invocation Error:', orderError);
+
+                let errorMessage = 'Failed to create order. Please check Supabase logs.';
+
+                // Supabase's invoke error might contain the response in different places depending on version
+                if (orderError.message) errorMessage = orderError.message;
+
+                try {
+                    // Try to extract the custom error message we sent from the Edge Function
+                    if (orderError.context?.response) {
+                        const errorBody = await orderError.context.response.json();
+                        errorMessage = errorBody.error || errorMessage;
+                    }
+                } catch (e) {
+                    console.error('Could not parse error body:', e);
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            if (!orderData?.id) {
+                throw new Error('Order creation was successful but no Order ID was returned.');
+            }
+
+            const options = {
+                key: razropayKey,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                order_id: orderData.id, // Mandatory for auto-capture
+                name: `Vizoraa ${plan.name}`,
+                description: `Subscription for ${plan.duration}`,
+                image: 'https://via.placeholder.com/150', // Replace with logo
+                handler: async function (response) {
+                    try {
+                        const { data: { user } } = await supabase.auth.getUser();
+                        if (!user) throw new Error('User not found');
+
+                        // Calculate expiry
+                        const now = new Date();
+                        let expiryDate = new Date();
+
+                        if (plan.id === '1_month') expiryDate.setMonth(now.getMonth() + 1);
+                        if (plan.id === '6_months') expiryDate.setMonth(now.getMonth() + 6);
+                        if (plan.id === '12_months') expiryDate.setFullYear(now.getFullYear() + 1);
+
+                        // Update Profile
+                        const { error } = await supabase
+                            .from('profiles')
+                            .update({
+                                subscription_plan: 'gold',
+                                subscription_expiry: expiryDate.toISOString(),
+                            })
+                            .eq('id', user.id);
+
+                        if (error) throw error;
+
+                        alert('Subscription Successful! Welcome to Gold.');
+                        navigate('/dashboard');
+
+                    } catch (err) {
+                        console.error(err);
+                        alert('Subscription record failed: ' + err.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                },
+                theme: {
+                    color: '#f59e0b'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.on('payment.failed', function (response) {
+                alert(`Payment Failed: ${response.error.description}`);
+                setLoading(false);
+            });
+            paymentObject.open();
+
+        } catch (err) {
+            console.error('Payment Initialization Error:', err);
+            alert('Could not initiate payment: ' + err.message);
             setLoading(false);
-        });
-        paymentObject.open();
+        }
     };
 
     return (
