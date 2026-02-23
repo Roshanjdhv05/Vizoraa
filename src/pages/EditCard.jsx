@@ -313,6 +313,70 @@ const EditCard = () => {
     };
 
     const handlePaymentAndSave = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+
+        // Check if template is premium and not unlocked
+        const isPremiumTemplate = ['hero-cover-profile', 'flip-card'].includes(formData.template_id);
+        const isUnlocked = unlockedTemplates.includes(formData.template_id);
+
+        if (isPremiumTemplate && !isUnlocked) {
+            // Check if user has active gold subscription
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: profile } = await supabase.from('profiles').select('subscription_plan').eq('id', user.id).single();
+
+            if (profile?.subscription_plan !== 'gold') {
+                // Reuse handlePayment logic (we should ideally extract this to a hook or utility)
+                const res = await loadRazorpay();
+                if (!res) {
+                    alert('Razorpay SDK failed to load. Are you online?');
+                    setSubmitting(false);
+                    return;
+                }
+
+                const razropayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+                if (!razropayKey) {
+                    alert('Payment Configuration Error: Key not found.');
+                    setSubmitting(false);
+                    return;
+                }
+
+                try {
+                    const { data: orderData, error: orderError } = await supabase.functions.invoke('create-order', {
+                        body: {
+                            amount: 100,
+                            currency: 'INR',
+                            receipt: `receipt_edit_${Date.now()}`,
+                            notes: { template_id: formData.template_id }
+                        }
+                    });
+
+                    if (orderError || !orderData?.id) throw new Error(orderError?.message || 'Order creation failed');
+
+                    const options = {
+                        key: razropayKey,
+                        amount: orderData.amount,
+                        currency: 'INR',
+                        name: 'Vizoraa Premium Card',
+                        description: 'Unlock Premium Template',
+                        order_id: orderData.id,
+                        handler: function (response) {
+                            // On payment success, proceed to save with premium flag
+                            handleSubmit(e);
+                        },
+                        theme: { color: '#f97316' }
+                    };
+
+                    const rzp = new window.Razorpay(options);
+                    rzp.open();
+                } catch (err) {
+                    alert('Could not initiate payment: ' + err.message);
+                    setSubmitting(false);
+                }
+                return;
+            }
+        }
+
         handleSubmit(e);
     };
 

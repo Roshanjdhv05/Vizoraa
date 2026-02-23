@@ -67,8 +67,10 @@ const Premium = () => {
         }
 
         const razropayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        console.log('Using Razorpay Key:', razropayKey ? razropayKey.substring(0, 10) + '...' : 'MISSING');
+
         if (!razropayKey) {
-            alert('Payment Configuration Error: Key not found.');
+            alert('Payment Configuration Error: VITE_RAZORPAY_KEY_ID not found in environment variables.');
             setLoading(false);
             return;
         }
@@ -92,23 +94,31 @@ const Premium = () => {
 
                 let errorMessage = 'Failed to create order. Please check Supabase logs.';
 
-                // Supabase's invoke error might contain the response in different places depending on version
-                if (orderError.message) errorMessage = orderError.message;
+                // If it's a JSON string (sometimes Supabase errors come back like this)
+                if (typeof orderError === 'string') {
+                    try {
+                        const parsed = JSON.parse(orderError);
+                        errorMessage = parsed.error || parsed.message || errorMessage;
+                    } catch (e) { }
+                } else if (orderError.message) {
+                    errorMessage = orderError.message;
+                }
 
-                try {
-                    // Try to extract the custom error message we sent from the Edge Function
-                    if (orderError.context?.response) {
+                // Try to extract the custom error message we sent from the Edge Function
+                if (orderError.context?.response) {
+                    try {
                         const errorBody = await orderError.context.response.json();
                         errorMessage = errorBody.error || errorMessage;
+                    } catch (e) {
+                        console.error('Could not parse error body:', e);
                     }
-                } catch (e) {
-                    console.error('Could not parse error body:', e);
                 }
 
                 throw new Error(errorMessage);
             }
 
-            if (!orderData?.id) {
+            if (!orderData || !orderData.id) {
+                console.error('Invalid Order Data:', orderData);
                 throw new Error('Order creation was successful but no Order ID was returned.');
             }
 
@@ -161,14 +171,15 @@ const Premium = () => {
 
             const paymentObject = new window.Razorpay(options);
             paymentObject.on('payment.failed', function (response) {
-                alert(`Payment Failed: ${response.error.description}`);
+                console.error('Razorpay Payment Failed Detail:', response.error);
+                alert(`Payment Failed!\nReason: ${response.error.reason}\nDescription: ${response.error.description}\nSource: ${response.error.source}\nStep: ${response.error.step}`);
                 setLoading(false);
             });
             paymentObject.open();
 
         } catch (err) {
-            console.error('Payment Initialization Error:', err);
-            alert('Could not initiate payment: ' + err.message);
+            console.error('Full Payment Error Object:', err);
+            alert('Could not initiate payment:\n' + err.message + (err.stack ? '\nCheck console for details.' : ''));
             setLoading(false);
         }
     };

@@ -18,8 +18,10 @@ Deno.serve(async (req: Request) => {
         const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET')
 
         if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-            console.error('Missing Razorpay keys in environment variables')
-            throw new Error('Server configuration error: Missing payment keys')
+            console.error('Missing Razorpay keys in environment variables');
+            console.log('RAZORPAY_KEY_ID exists:', !!RAZORPAY_KEY_ID);
+            console.log('RAZORPAY_KEY_SECRET exists:', !!RAZORPAY_KEY_SECRET);
+            throw new Error('Server configuration error: Missing payment keys. Please check Supabase Secrets.');
         }
 
         const { amount, currency = 'INR', receipt, notes } = await req.json()
@@ -29,6 +31,8 @@ Deno.serve(async (req: Request) => {
         }
 
         const auth = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)
+
+        console.log(`Creating Razorpay order for amount: ${amount} ${currency}`);
 
         const response = await fetch('https://api.razorpay.com/v1/orders', {
             method: 'POST',

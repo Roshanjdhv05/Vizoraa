@@ -202,9 +202,37 @@ const CreateCard = () => {
                 }
             });
 
-            if (orderError || !orderData?.id) {
-                console.error('Order Error:', orderError);
-                throw new Error(orderError?.message || 'Failed to create order. Please ensure Edge Function is deployed.');
+            if (orderError) {
+                console.error('Detailed Invocation Error:', orderError);
+
+                let errorMessage = 'Failed to create order. Please check Supabase logs.';
+
+                // If it's a JSON string
+                if (typeof orderError === 'string') {
+                    try {
+                        const parsed = JSON.parse(orderError);
+                        errorMessage = parsed.error || parsed.message || errorMessage;
+                    } catch (e) { }
+                } else if (orderError.message) {
+                    errorMessage = orderError.message;
+                }
+
+                // Try to extract the custom error message we sent from the Edge Function
+                if (orderError.context?.response) {
+                    try {
+                        const errorBody = await orderError.context.response.json();
+                        errorMessage = errorBody.error || errorMessage;
+                    } catch (e) {
+                        console.error('Could not parse error body:', e);
+                    }
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            if (!orderData || !orderData.id) {
+                console.error('Invalid Order Data:', orderData);
+                throw new Error('Order creation was successful but no Order ID was returned.');
             }
 
             const options = {
@@ -231,14 +259,15 @@ const CreateCard = () => {
 
             const paymentObject = new window.Razorpay(options);
             paymentObject.on('payment.failed', function (response) {
-                alert(`Payment Failed: ${response.error.description}`);
+                console.error('Razorpay Payment Failed Detail:', response.error);
+                alert(`Payment Failed!\nReason: ${response.error.reason}\nDescription: ${response.error.description}\nSource: ${response.error.source}\nStep: ${response.error.step}`);
                 setLoading(false);
             });
             paymentObject.open();
 
         } catch (err) {
             console.error('Order creation error:', err);
-            alert('Could not initiate payment: ' + err.message);
+            alert('Could not initiate payment:\n' + err.message);
             setLoading(false);
         }
     };
@@ -293,6 +322,22 @@ const CreateCard = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
+        // Check if template is premium and not unlocked
+        const isPremiumTemplate = ['hero-cover-profile', 'flip-card'].includes(formData.template_id);
+        const isUnlocked = unlockedTemplates.includes(formData.template_id);
+
+        if (isPremiumTemplate && !isUnlocked) {
+            // Check if user has active gold subscription
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: profile } = await supabase.from('profiles').select('subscription_plan').eq('id', user.id).single();
+
+            if (profile?.subscription_plan !== 'gold') {
+                await handlePayment();
+                return;
+            }
+        }
+
         await createCard(false);
     };
 
